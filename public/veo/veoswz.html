@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VEO首尾帧</title>
+    <link rel="stylesheet" href="../styles/workspace.css">
+    <link rel="stylesheet" href="../styles/mobile.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f5f7fa; min-height: 100vh; color: #1e293b; }
+
+        .top-header { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .header-btn:hover { background: #f0f2f5; border-color: #d1d5db; }
+        .page-title { font-size: 20px; font-weight: 600; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e8ecf1; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #64748b; }
+
+        .tab-nav { background: #fff; padding: 0 24px; border-bottom: 1px solid #e8ecf1; position: fixed; top: 56px; left: 0; right: 0; z-index: 99; height: 48px; display: flex; align-items: center; gap: 8px; }
+        .tab-item { padding: 8px 20px; font-size: 14px; color: #64748b; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .tab-item:hover { background: #f5f7fa; color: #475569; }
+        .tab-item.active { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #fff; font-weight: 500; }
+
+        .main-content { margin-top: 104px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+        .left-panel, .right-panel { display: flex; flex-direction: column; gap: 20px; }
+        .panel-section { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; }
+        .section-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        .credential-input { width: 100%; padding: 10px 14px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fafbfc; }
+        .credential-input:focus { outline: none; border-color: #f59e0b; background: #fff; }
+        .helper { font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.5; }
+
+        .frames-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .frame-upload { border: 2px dashed #d1d5db; border-radius: 12px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafbfc; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .frame-upload:hover, .frame-upload.dragover { border-color: #f59e0b; background: #fffbeb; }
+        .frame-upload.has-image { border-style: solid; border-color: #f59e0b; padding: 8px; }
+        .frame-upload.has-image img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+        .frame-label { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 8px; }
+        .frame-icon { font-size: 32px; margin-bottom: 8px; }
+        .frame-hint { font-size: 12px; color: #94a3b8; }
+        .frame-upload .remove-btn { margin-top: 8px; padding: 4px 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; }
+
+        .prompt-wrapper { position: relative; }
+        .prompt-textarea { width: 100%; min-height: 100px; padding: 12px 14px; padding-right: 90px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fafbfc; resize: vertical; font-family: inherit; }
+        .prompt-textarea:focus { outline: none; border-color: #f59e0b; background: #fff; }
+        .optimize-btn { position: absolute; right: 8px; top: 8px; padding: 6px 12px; background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); color: #fff; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s; }
+        .optimize-btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); }
+        .optimize-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .optimize-btn.loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes redBlink { 0%, 100% { color: #ef4444; } 50% { color: #fca5a5; } }
+        .red-blink { color: #ef4444; animation: redBlink 1s infinite; }
+
+        .param-label { font-size: 13px; color: #475569; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .param-btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .param-btn { padding: 10px 20px; border: 1px solid #e8ecf1; border-radius: 20px; font-size: 13px; color: #475569; background: #fff; cursor: pointer; transition: all 0.2s; }
+        .param-btn:hover { border-color: #f59e0b; background: #fffbeb; }
+        .param-btn.active { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #fff; border-color: transparent; }
+
+        .info-box { display: flex; align-items: flex-start; gap: 8px; padding: 12px 14px; background: #fffbeb; border-radius: 8px; font-size: 12px; color: #92400e; line-height: 1.6; margin-top: 16px; }
+
+        .submit-btn { width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+        .status:empty { display: none; }
+        .status.success { background: #ecfdf5; color: #059669; }
+        .status.error { background: #fef2f2; color: #dc2626; }
+        .status.info { background: #eff6ff; color: #2563eb; }
+
+        .task-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .task-desc { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+        .task-list { display: flex; flex-direction: column; gap: 12px; max-height: 600px; overflow-y: auto; }
+        .history-empty { text-align: center; color: #94a3b8; font-size: 13px; padding: 40px 20px; }
+
+        .history-item { background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 10px; padding: 16px; }
+        .history-item header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .history-meta { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #64748b; }
+        .history-meta strong { color: #1e293b; font-size: 13px; display: block; margin-bottom: 4px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .history-status { padding: 4px 10px; border-radius: 12px; font-size: 12px; white-space: nowrap; }
+        .history-status.pending { background: #fef3c7; color: #92400e; }
+        .history-status.completed { background: #d1fae5; color: #065f46; }
+        .history-status.failed { background: #fee2e2; color: #991b1b; }
+        .history-video { margin-top: 12px; }
+        .history-video video { width: 100%; max-height: 200px; border-radius: 8px; background: #000; }
+        .history-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .history-actions button { padding: 6px 12px; background: #fff; border: 1px solid #e8ecf1; border-radius: 6px; font-size: 12px; color: #475569; cursor: pointer; transition: all 0.2s; }
+        .history-actions button:hover:not(:disabled) { border-color: #f59e0b; color: #f59e0b; }
+        .history-actions button.delete-btn { color: #ef4444; }
+        .history-actions button.delete-btn:hover:not(:disabled) { border-color: #ef4444; background: #fef2f2; }
+
+        .hidden { display: none !important; }
+        .file-input { display: none; }
+
+        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .tab-nav { overflow-x: auto; padding: 0 16px; } .main-content { padding: 16px; } .frames-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header class="top-header">
+        <div class="header-left">
+        </div>
+        <span class="page-title">VEO首尾帧</span>
+        <div class="header-right">
+            <button class="header-icon-btn" onclick="location.reload()">🔄</button>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <a href="veowssp.html" class="tab-item">文生视频</a>
+        <a href="veotssp.html" class="tab-item">图生视频</a>
+        <a href="veoswz.html" class="tab-item active">首尾帧</a>
+        <a href="veoybzdy.html" class="tab-item">样本自定义</a>
+    </nav>
+
+    <main class="main-content">
+        <div class="left-panel">
+            <div class="panel-section">
+                <h2 class="section-title">🔑 APIKey填写区</h2>
+                <div style="margin-bottom: 12px;">
+                    <label class="helper" style="margin-bottom: 6px; display: block;">VEO APIKey<span class="red-blink">（推荐分组限时特价分组、default分组、纯AZ分组）</span></label>
+                    <input type="password" id="credential" class="credential-input" placeholder="粘贴VEO访问凭证" autocomplete="off">
+                </div>
+                <div>
+                    <label class="helper" style="margin-bottom: 6px; display: block;">Gemini APIKey<span class="red-blink">（推荐分组限时特价分组、优质gemini分组、官转gemini分组）</span></label>
+                    <input type="password" id="geminiKey" class="credential-input" placeholder="粘贴Gemini访问凭证" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">🖼️ 上传首尾帧图片</h2>
+                <div class="frames-container">
+                    <div class="frame-upload" id="startFrameZone" onclick="document.getElementById('startFrameInput').click()">
+                        <input type="file" class="file-input" id="startFrameInput" accept="image/*">
+                        <span class="frame-icon">🎬</span>
+                        <span class="frame-label">首帧图片</span>
+                        <span class="frame-hint">视频开始画面</span>
+                    </div>
+                    <div class="frame-upload" id="endFrameZone" onclick="document.getElementById('endFrameInput').click()">
+                        <input type="file" class="file-input" id="endFrameInput" accept="image/*">
+                        <span class="frame-icon">🏁</span>
+                        <span class="frame-label">尾帧图片</span>
+                        <span class="frame-hint">视频结束画面</span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span>💡</span>
+                    <span>上传首帧和尾帧图片，AI将自动生成两帧之间的过渡视频</span>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">✏️ 提示词（可选）</h2>
+                <div class="prompt-wrapper">
+                    <textarea id="promptInput" class="prompt-textarea" placeholder="描述首尾帧之间的过渡效果，例如：平滑过渡、渐变效果...（可选）"></textarea>
+                    <button type="button" class="optimize-btn" id="optimizeBtn" title="AI智能润色提示词">✨ AI润色</button>
+                </div>
+                <p class="helper">提示词可帮助AI更好地理解过渡效果</p>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">⚙️ 参数设置</h2>
+                <div style="margin-bottom: 20px;">
+                    <p class="param-label">🤖 模型选择</p>
+                    <div class="param-btn-group" id="modelGroup">
+                        <button type="button" class="param-btn active" data-value="veo_3_1">VEO 3.1</button>
+                        <button type="button" class="param-btn" data-value="veo_3_1-fast">VEO 3.1 Fast</button>
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <p class="param-label">📐 视频比例</p>
+                    <div class="param-btn-group" id="sizeGroup">
+                        <button type="button" class="param-btn active" data-value="16x9">16:9 横屏</button>
+                        <button type="button" class="param-btn" data-value="9x16">9:16 竖屏</button>
+                    </div>
+                </div>
+                <div>
+                    <p class="param-label">⏱️ 视频时长</p>
+                    <div class="param-btn-group" id="secondsGroup">
+                        <button type="button" class="param-btn" data-value="5">5秒</button>
+                        <button type="button" class="param-btn active" data-value="8">8秒</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="submit-btn" id="submitBtn">🎬 生成视频</button>
+            <p id="status" class="status"></p>
+        </div>
+
+        <div class="right-panel">
+            <div class="panel-section" style="flex: 1;">
+                <div class="task-header">
+                    <h2 class="section-title" style="margin-bottom: 0;">📋 任务历史</h2>
+                    <button class="param-btn" onclick="clearHistory()" style="padding: 6px 12px; font-size: 12px;">清空</button>
+                </div>
+                <p class="task-desc">展示最近的视频生成任务</p>
+                <p id="historyEmpty" class="history-empty">暂无任务记录</p>
+                <div id="taskHistoryList" class="task-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../scripts/duu-db.js"></script>
+    <script src="../scripts/apikeys.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/image-server.js"></script>
+    <script>
+        const API_BASE = '';
+        const GEMINI_API = (apiKey) => `/v1beta/models/gemini-2.5-flash-lite-nothinking:generateContent?key=${encodeURIComponent(apiKey)}`;
+        
+        const pageCache = new CacheManager('veo-swz');
+
+        const credentialInput = document.getElementById('credential');
+        const geminiKeyInput = document.getElementById('geminiKey');
+        const startFrameInput = document.getElementById('startFrameInput');
+        const endFrameInput = document.getElementById('endFrameInput');
+        const startFrameZone = document.getElementById('startFrameZone');
+        const endFrameZone = document.getElementById('endFrameZone');
+        const promptInput = document.getElementById('promptInput');
+        const optimizeBtn = document.getElementById('optimizeBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusEl = document.getElementById('status');
+        const taskHistoryList = document.getElementById('taskHistoryList');
+        const historyEmpty = document.getElementById('historyEmpty');
+        const sizeGroup = document.getElementById('sizeGroup');
+        const secondsGroup = document.getElementById('secondsGroup');
+        const modelGroup = document.getElementById('modelGroup');
+
+        let startFrame = null;
+        let endFrame = null;
+        let selectedSize = '16x9';
+        let selectedSeconds = '8';
+        let selectedModel = 'veo_3_1';
+        let taskHistory = [];
+        let pollingIntervals = {};
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCachedState();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            credentialInput.addEventListener('input', debounce(async () => {
+                await pageCache.set('veoApiKey', credentialInput.value, { ttl: null });
+            }, 500));
+            geminiKeyInput.addEventListener('input', debounce(async () => {
+                await pageCache.set('geminiApiKey', geminiKeyInput.value, { ttl: null });
+            }, 500));
+
+            startFrameInput.addEventListener('change', (e) => handleFrameSelect(e, 'start'));
+            endFrameInput.addEventListener('change', (e) => handleFrameSelect(e, 'end'));
+
+            // 拖拽支持
+            [startFrameZone, endFrameZone].forEach((zone, idx) => {
+                const type = idx === 0 ? 'start' : 'end';
+                zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+                zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+                zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); const file = e.dataTransfer.files[0]; if (file && file.type.startsWith('image/')) handleFrameFile(file, type); });
+            });
+
+            sizeGroup.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('param-btn')) {
+                    sizeGroup.querySelectorAll('.param-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedSize = e.target.dataset.value;
+                    await pageCache.set('selectedSize', selectedSize, { ttl: null });
+                }
+            });
+            secondsGroup.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('param-btn')) {
+                    secondsGroup.querySelectorAll('.param-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedSeconds = e.target.dataset.value;
+                    await pageCache.set('selectedSeconds', selectedSeconds, { ttl: null });
+                }
+            });
+            modelGroup.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('param-btn')) {
+                    modelGroup.querySelectorAll('.param-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedModel = e.target.dataset.value;
+                    await pageCache.set('selectedModel', selectedModel, { ttl: null });
+                }
+            });
+
+            optimizeBtn.addEventListener('click', handleOptimize);
+            submitBtn.addEventListener('click', handleSubmit);
+        }
+
+        async function loadCachedState() {
+            try {
+                const [veoKey, geminiKey, cachedHistory, cachedSize, cachedSeconds, cachedModel] = await Promise.all([
+                    pageCache.get('veoApiKey'), pageCache.get('geminiApiKey'), pageCache.get('taskHistory'),
+                    pageCache.get('selectedSize'), pageCache.get('selectedSeconds'), pageCache.get('selectedModel')
+                ]);
+                if (veoKey) credentialInput.value = veoKey;
+                if (geminiKey) geminiKeyInput.value = geminiKey;
+                if (cachedHistory && Array.isArray(cachedHistory)) { taskHistory = cachedHistory; renderHistory(); }
+                if (cachedSize) { selectedSize = cachedSize; sizeGroup.querySelectorAll('.param-btn').forEach(b => b.classList.toggle('active', b.dataset.value === cachedSize)); }
+                if (cachedSeconds) { selectedSeconds = cachedSeconds; secondsGroup.querySelectorAll('.param-btn').forEach(b => b.classList.toggle('active', b.dataset.value === cachedSeconds)); }
+                if (cachedModel) { selectedModel = cachedModel; modelGroup.querySelectorAll('.param-btn').forEach(b => b.classList.toggle('active', b.dataset.value === cachedModel)); }
+                const apiKey = credentialInput.value.trim();
+                if (apiKey) taskHistory.filter(t => t.status === 'pending').forEach(t => startPolling(t.id, apiKey));
+            } catch (e) { console.error('加载缓存失败:', e); }
+        }
+
+        function handleFrameSelect(e, type) {
+            const file = e.target.files[0];
+            if (file) handleFrameFile(file, type);
+        }
+
+        function handleFrameFile(file, type) {
+            if (file.size > 10 * 1024 * 1024) { setStatus('文件大小不能超过 10MB', 'error'); return; }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const zone = type === 'start' ? startFrameZone : endFrameZone;
+                if (type === 'start') startFrame = file;
+                else endFrame = file;
+                zone.innerHTML = `<img src="${e.target.result}" alt="${type === 'start' ? '首帧' : '尾帧'}"><button class="remove-btn" onclick="event.stopPropagation(); removeFrame('${type}')">移除</button>`;
+                zone.classList.add('has-image');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeFrame(type) {
+            const zone = type === 'start' ? startFrameZone : endFrameZone;
+            const input = type === 'start' ? startFrameInput : endFrameInput;
+            if (type === 'start') startFrame = null;
+            else endFrame = null;
+            input.value = '';
+            zone.classList.remove('has-image');
+            zone.innerHTML = `<input type="file" class="file-input" id="${type}FrameInput" accept="image/*"><span class="frame-icon">${type === 'start' ? '🎬' : '🏁'}</span><span class="frame-label">${type === 'start' ? '首帧图片' : '尾帧图片'}</span><span class="frame-hint">${type === 'start' ? '视频开始画面' : '视频结束画面'}</span>`;
+            document.getElementById(`${type}FrameInput`).addEventListener('change', (e) => handleFrameSelect(e, type));
+        }
+
+        async function handleOptimize() {
+            const geminiKey = geminiKeyInput.value.trim();
+            if (!geminiKey) { setStatus('请先填写 Gemini APIKey', 'error'); return; }
+            if (!startFrame && !endFrame) { setStatus('请先上传至少一张图片', 'error'); return; }
+
+            optimizeBtn.disabled = true; optimizeBtn.classList.add('loading'); optimizeBtn.textContent = '润色中...';
+            setStatus('AI正在分析图片并优化提示词...', 'info');
+
+            try {
+                const userPrompt = promptInput.value.trim();
+                const systemPrompt = `你是VEO视频提示词优化专家。用户上传了首尾帧图片，生成视频过渡提示词。
+
+优化方向：
+1. 描述首尾帧之间的过渡效果
+2. 添加动态描述和运动方式
+3. 提示词要具体、生动
+
+【重要】只回执优化后的提示词，禁止输出任何解释、前缀、后缀或额外文字。
+
+${userPrompt ? `用户描述：${userPrompt}` : '生成合适的过渡效果描述'}`;
+
+                const body = { contents: [{ role: 'user', parts: [{ text: systemPrompt }] }] };
+                const response = await fetch(GEMINI_API(geminiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                if (!response.ok) throw new Error(`API错误: ${response.status}`);
+                const result = await response.json();
+                const optimizedPrompt = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+                if (optimizedPrompt) { promptInput.value = optimizedPrompt; setStatus('提示词优化完成！', 'success'); }
+                else throw new Error('未获取到优化结果');
+            } catch (error) { setStatus(`润色失败: ${error.message}`, 'error'); }
+            finally { optimizeBtn.disabled = false; optimizeBtn.classList.remove('loading'); optimizeBtn.textContent = '✨ AI润色'; }
+        }
+
+        async function handleSubmit() {
+            const apiKey = credentialInput.value.trim();
+            const prompt = promptInput.value.trim();
+            if (!apiKey) { setStatus('请填写 VEO APIKey', 'error'); return; }
+            if (!startFrame || !endFrame) { setStatus('请上传首帧和尾帧图片', 'error'); return; }
+
+            submitBtn.disabled = true;
+            setStatus('正在提交任务...', 'info');
+
+            try {
+                const formData = new FormData();
+                formData.append('model', selectedModel);
+                formData.append('prompt', prompt || '平滑过渡');
+                formData.append('seconds', selectedSeconds);
+                formData.append('size', selectedSize);
+                formData.append('watermark', 'false');
+                formData.append('start_frame', startFrame);
+                formData.append('end_frame', endFrame);
+
+                const response = await fetch(`${API_BASE}/v1/videos`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || result.error || '请求失败');
+
+                const taskId = result.id || result.task_id || result.data?.id;
+                if (!taskId) throw new Error('未获取到任务ID');
+
+                const task = {
+                    id: taskId,
+                    prompt: prompt || '首尾帧过渡',
+                    size: selectedSize,
+                    seconds: selectedSeconds,
+                    model: selectedModel,
+                    status: 'pending',
+                    createdAt: Date.now(),
+                    videoUrl: null,
+                    videoId: null
+                };
+
+                taskHistory.unshift(task);
+                saveHistory();
+                renderHistory();
+                startPolling(taskId, apiKey);
+
+                setStatus('任务已提交，正在生成视频...', 'success');
+                promptInput.value = '';
+                removeFrame('start');
+                removeFrame('end');
+            } catch (error) {
+                setStatus(`提交失败: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        function startPolling(taskId, apiKey) {
+            if (pollingIntervals[taskId]) return;
+            const poll = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/v1/videos/${taskId}`, {
+                        headers: { 'Authorization': `Bearer ${apiKey}`, 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                    });
+                    const result = await response.json();
+                    const task = taskHistory.find(t => t.id === taskId);
+                    if (!task) { clearInterval(pollingIntervals[taskId]); delete pollingIntervals[taskId]; return; }
+
+                    const status = result.status || result.data?.status;
+                    if (status === 'SUCCESS' || status === 'completed') {
+                        task.status = 'completed';
+                        task.videoId = result.video_id || result.data?.video_id;
+                        task.videoUrl = result.video_url || result.data?.video_url || `${API_BASE}/v1/videos/${task.videoId}/content`;
+                        clearInterval(pollingIntervals[taskId]); delete pollingIntervals[taskId];
+                        
+                        // 保存到云端（登录用户）
+                        if (task.videoUrl) {
+                            try {
+                                await ImageServer.saveGeneration(
+                                    credentialInput.value.trim(),
+                                    task.prompt,
+                                    [{ url: task.videoUrl }],
+                                    'veo-firstlast',
+                                    'image'
+                                );
+                                console.log('视频已保存到云端');
+                            } catch (e) {
+                                console.warn('保存到云端失败:', e);
+                            }
+                        }
+                    } else if (status === 'FAILED' || status === 'failed') {
+                        task.status = 'failed';
+                        task.failReason = result.fail_reason || result.message || '生成失败';
+                        clearInterval(pollingIntervals[taskId]); delete pollingIntervals[taskId];
+                    } else { task.progress = result.progress || result.data?.progress; }
+                    saveHistory(); renderHistory();
+                } catch (error) { console.error('轮询失败:', error); }
+            };
+            poll();
+            pollingIntervals[taskId] = setInterval(poll, 10000);
+        }
+
+        async function saveHistory() { try { await pageCache.set('taskHistory', taskHistory.slice(0, 20), { ttl: null }); } catch (e) {} }
+
+        function renderHistory() {
+            if (taskHistory.length === 0) { historyEmpty.classList.remove('hidden'); taskHistoryList.innerHTML = ''; return; }
+            historyEmpty.classList.add('hidden');
+            taskHistoryList.innerHTML = taskHistory.map(task => `
+                <div class="history-item" data-id="${task.id}">
+                    <header><div class="history-meta"><strong title="${task.prompt}">${task.prompt}</strong><span>${task.size} · ${task.seconds}秒 · ${formatTime(task.createdAt)}</span></div>
+                    <span class="history-status ${task.status}">${getStatusText(task)}</span></header>
+                    ${task.videoUrl ? `<div class="history-video"><video src="${task.videoUrl}" controls preload="metadata"></video></div>` : ''}
+                    <div class="history-actions">${task.videoUrl ? `<button onclick="downloadVideo('${task.videoUrl}', '${task.id}')">下载</button>` : ''}<button class="delete-btn" onclick="deleteTask('${task.id}')">删除</button></div>
+                </div>`).join('');
+        }
+
+        function getStatusText(task) { if (task.status === 'pending') return task.progress ? `生成中 ${task.progress}` : '生成中...'; if (task.status === 'completed') return '已完成'; if (task.status === 'failed') return '失败'; return task.status; }
+        function downloadVideo(url, filename) { const a = document.createElement('a'); a.href = url; a.download = `veo_${filename}.mp4`; a.target = '_blank'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+        function deleteTask(id) { if (!confirm('确定删除该任务？')) return; taskHistory = taskHistory.filter(t => t.id !== id); saveHistory(); renderHistory(); }
+        function clearHistory() { if (!confirm('确定清空所有历史记录？')) return; taskHistory = []; saveHistory(); renderHistory(); }
+        function setStatus(message, type = '') { statusEl.textContent = message; statusEl.className = type ? `status ${type}` : 'status'; }
+        function formatTime(timestamp) { const d = new Date(timestamp); return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; }
+        function debounce(fn, delay) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; }
+    </script>

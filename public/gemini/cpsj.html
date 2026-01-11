@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品海报设计</title>
+    <link rel="stylesheet" href="../styles/workspace.css">
+    <link rel="stylesheet" href="../styles/mobile.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f5f7fa; min-height: 100vh; color: #1e293b; }
+
+        .top-header { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .header-btn:hover { background: #f0f2f5; border-color: #d1d5db; }
+        .page-title { font-size: 20px; font-weight: 600; background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e8ecf1; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #64748b; }
+
+        .tab-nav { background: #fff; padding: 0 24px; border-bottom: 1px solid #e8ecf1; position: fixed; top: 56px; left: 0; right: 0; z-index: 99; height: 48px; display: flex; align-items: center; gap: 8px; }
+        .tab-item { padding: 8px 20px; font-size: 14px; color: #64748b; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .tab-item:hover { background: #f5f7fa; color: #475569; }
+        .tab-item.active { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: #fff; font-weight: 500; }
+
+        .main-content { margin-top: 104px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1600px; margin-left: auto; margin-right: auto; }
+        .left-panel, .right-panel { display: flex; flex-direction: column; gap: 20px; }
+        .panel-section { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; }
+        .section-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .section-title .badge { font-size: 11px; padding: 2px 8px; background: #fef3c7; color: #92400e; border-radius: 10px; font-weight: 500; }
+
+        .credential-input { width: 100%; padding: 10px 14px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fafbfc; }
+        .credential-input:focus { outline: none; border-color: #f59e0b; background: #fff; }
+        .helper { font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.5; }
+
+        /* 上传区域 */
+        .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .upload-box { border: 2px dashed #d1d5db; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafbfc; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .upload-box:hover { border-color: #f59e0b; background: #fffbeb; }
+        .upload-box.has-image { border-style: solid; border-color: #f59e0b; padding: 0; background: #fff; }
+        .upload-box .upload-icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-box .upload-label { font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px; }
+        .upload-box .upload-hint { font-size: 12px; color: #94a3b8; }
+        .upload-box img { max-width: 100%; max-height: 170px; width: auto; height: auto; object-fit: contain; border-radius: 8px; }
+        .upload-box .delete-btn { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(255,255,255,0.95); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ef4444; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10; transition: all 0.2s; }
+        .upload-box .delete-btn:hover { background: #fff; transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+        /* 完全隐藏文件输入框 - 使用多种方法确保兼容性 */
+        .file-input,
+        .upload-box input[type="file"],
+        input.file-input[type="file"] {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            clip-path: inset(50%) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+        }
+
+        /* 画布编辑区 */
+        .canvas-section { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; }
+        .canvas-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tool-btn { padding: 8px 16px; border: 1px solid #e8ecf1; border-radius: 8px; background: #fff; font-size: 13px; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .tool-btn:hover { border-color: #f59e0b; background: #fffbeb; }
+        .tool-btn.active { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: #fff; border-color: transparent; }
+        .tool-separator { width: 1px; height: 24px; background: #e8ecf1; }
+        .brush-size { display: flex; align-items: center; gap: 8px; }
+        .brush-size label { font-size: 12px; color: #64748b; }
+        .brush-size input { width: 80px; }
+
+        .canvas-container { position: relative; background: #f1f5f9; border-radius: 8px; overflow: hidden; min-height: 400px; display: flex; align-items: center; justify-content: center; }
+        .canvas-placeholder { text-align: center; color: #94a3b8; }
+        .canvas-placeholder .icon { font-size: 48px; margin-bottom: 12px; }
+        .canvas-placeholder p { font-size: 14px; }
+        #maskCanvas { position: absolute; top: 0; left: 0; cursor: crosshair; }
+        #bgImage { max-width: 100%; max-height: 500px; display: block; }
+
+        /* 文字设置 */
+        .text-settings { display: flex; flex-direction: column; gap: 12px; }
+        .text-row { display: flex; gap: 12px; align-items: center; }
+        .text-row input { flex: 1; }
+        .text-row select { width: 120px; }
+        .add-text-btn { padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; }
+        .add-text-btn:hover { background: #f0f2f5; }
+
+        /* 提示词 */
+        .prompt-textarea { width: 100%; min-height: 80px; padding: 12px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 14px; background: #fafbfc; resize: vertical; }
+        .prompt-textarea:focus { outline: none; border-color: #f59e0b; background: #fff; }
+
+        /* 输出设置 */
+        .ratio-btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ratio-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #e8ecf1; border-radius: 20px; font-size: 13px; color: #475569; background: #fff; cursor: pointer; transition: all 0.2s; }
+        .ratio-btn:hover { border-color: #f59e0b; background: #fffbeb; }
+        .ratio-btn.active { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: #fff; border-color: transparent; }
+        .ratio-icon { width: 12px; height: 12px; border: 1.5px solid currentColor; border-radius: 2px; }
+
+        .model-select { width: 100%; padding: 10px 14px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fff; }
+
+        /* 按钮 */
+        .submit-btn { width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+        .status:empty { display: none; }
+        .status.success { background: #ecfdf5; color: #059669; }
+        .status.error { background: #fef2f2; color: #dc2626; }
+        .status.info { background: #eff6ff; color: #2563eb; }
+
+        /* 历史记录 */
+        .history-empty { text-align: center; color: #94a3b8; font-size: 13px; padding: 40px 20px; }
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+        .history-item { background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 10px; padding: 16px; }
+        .history-item header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .history-meta { font-size: 12px; color: #64748b; }
+        .history-meta strong { color: #1e293b; font-size: 14px; display: block; margin-bottom: 4px; }
+        .history-actions button { padding: 6px 12px; background: #fff; border: 1px solid #e8ecf1; border-radius: 6px; font-size: 12px; color: #475569; cursor: pointer; margin-left: 8px; }
+        .history-actions button:hover { border-color: #f59e0b; color: #f59e0b; }
+        .history-image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .history-image img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #e8ecf1; cursor: pointer; }
+        .history-image img:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        /* 模式切换 */
+        .mode-switch { display: flex; gap: 8px; margin-bottom: 16px; }
+        .mode-btn { flex: 1; padding: 12px; border: 2px solid #e8ecf1; border-radius: 10px; background: #fff; font-size: 14px; color: #475569; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .mode-btn:hover { border-color: #f59e0b; }
+        .mode-btn.active { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+        .mode-btn .mode-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+
+        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .upload-row { grid-template-columns: 1fr; }
+            .canvas-toolbar { justify-content: center; }
+        }
+
+        /* 图片预览弹窗 */
+        .preview-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .preview-modal.show { display: flex; }
+        .preview-modal img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        .preview-close { position: absolute; top: 20px; right: 20px; width: 44px; height: 44px; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; cursor: pointer; font-size: 24px; color: #fff; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .preview-close:hover { background: rgba(255,255,255,0.25); transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <header class="top-header">
+        <div class="header-left">
+        </div>
+        <span class="page-title">产品海报设计</span>
+        <div class="header-right">
+            <button class="header-icon-btn">🔔</button>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <a href="tiqu-yinhua.html" class="tab-item">提取印花</a>
+        <a href="situcankao.html" class="tab-item">四图参考</a>
+        <a href="shitucankao.html" class="tab-item">十图参考</a>
+        <a href="zidingyi.html" class="tab-item">自定义</a>
+        <a href="cpsj.html" class="tab-item active">产品海报</a>
+    </nav>
+
+    <main class="main-content">
+        <div class="left-panel">
+            <!-- API Key -->
+            <div class="panel-section">
+                <h2 class="section-title">APIKey填写区</h2>
+                <input type="password" id="credential" class="credential-input" placeholder="粘贴访问凭证" required autocomplete="off">
+                <p class="helper">填写DUU调用站的APIkey</p>
+            </div>
+
+            <!-- 上传区域 -->
+            <div class="panel-section">
+                <h2 class="section-title">📦 上传素材</h2>
+                <div class="upload-row">
+                    <label class="upload-box" id="productUpload">
+                        <input type="file" class="file-input" id="productFile" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;visibility:hidden;pointer-events:none;">
+                        <span class="upload-icon">📦</span>
+                        <span class="upload-label">上传商品图</span>
+                        <span class="upload-hint">必填，你的产品图片</span>
+                    </label>
+                    <label class="upload-box" id="bgUpload">
+                        <input type="file" class="file-input" id="bgFile" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;visibility:hidden;pointer-events:none;">
+                        <span class="upload-icon">🖼️</span>
+                        <span class="upload-label">上传背景图</span>
+                        <span class="upload-hint">可选，不上传则AI生成</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 模式选择 -->
+            <div class="panel-section">
+                <h2 class="section-title">🎨 设计模式</h2>
+                <div class="mode-switch">
+                    <button class="mode-btn active" data-mode="auto">
+                        <span class="mode-icon">✨</span>
+                        AI自动设计
+                    </button>
+                    <button class="mode-btn" data-mode="mask">
+                        <span class="mode-icon">🎯</span>
+                        手动标记位置
+                    </button>
+                </div>
+                <p class="helper" id="modeHint">AI将自动分析商品和背景，智能融合生成海报</p>
+            </div>
+
+            <!-- 遮罩编辑区（手动模式） -->
+            <div class="canvas-section" id="maskSection" style="display: none;">
+                <h2 class="section-title">🎯 标记产品位置 <span class="badge">在背景图上涂抹标记</span></h2>
+                <div class="canvas-toolbar">
+                    <button class="tool-btn active" data-tool="brush">🖌️ 画笔</button>
+                    <button class="tool-btn" data-tool="eraser">🧹 橡皮擦</button>
+                    <span class="tool-separator"></span>
+                    <div class="brush-size">
+                        <label>笔刷大小:</label>
+                        <input type="range" id="brushSize" min="5" max="100" value="30">
+                        <span id="brushSizeValue">30</span>
+                    </div>
+                    <span class="tool-separator"></span>
+                    <button class="tool-btn" id="clearMask">🗑️ 清除遮罩</button>
+                    <button class="tool-btn" id="saveMask">💾 保存遮罩</button>
+                </div>
+                <div class="canvas-container" id="canvasContainer">
+                    <div class="canvas-placeholder" id="canvasPlaceholder">
+                        <div class="icon">🖼️</div>
+                        <p>请先上传背景图</p>
+                    </div>
+                    <img id="bgImage" style="display: none;">
+                    <canvas id="maskCanvas" style="display: none;"></canvas>
+                </div>
+                <p class="helper">在背景图上涂抹红色区域，标记产品应该出现的位置</p>
+            </div>
+
+            <!-- 文字设置 -->
+            <div class="panel-section">
+                <h2 class="section-title">✏️ 海报文字</h2>
+                <div class="text-settings" id="textSettings">
+                    <div class="text-row">
+                        <input type="text" class="credential-input" id="mainText" placeholder="主标题文字（如：新品上市）">
+                    </div>
+                    <div class="text-row">
+                        <input type="text" class="credential-input" id="subText" placeholder="副标题文字（如：限时特惠 8折起）">
+                    </div>
+                    <div class="text-row">
+                        <input type="text" class="credential-input" id="extraText1" placeholder="附加文字1（如：全场包邮）">
+                    </div>
+                    <div class="text-row">
+                        <input type="text" class="credential-input" id="extraText2" placeholder="附加文字2（如：仅限今日）">
+                    </div>
+                    <div class="text-row">
+                        <input type="text" class="credential-input" id="extraText3" placeholder="附加文字3（如：扫码领券）">
+                    </div>
+                </div>
+                <p class="helper">输入希望在海报中显示的文字，AI会智能排版（可留空）</p>
+            </div>
+
+            <!-- 额外描述 -->
+            <div class="panel-section">
+                <h2 class="section-title">💬 设计描述</h2>
+                <textarea id="promptInput" class="prompt-textarea" placeholder="描述你想要的海报风格，如：简约现代风格、暖色调、节日促销氛围..."></textarea>
+                <div id="optimizeControls" style="display: none; align-items: center; gap: 12px; margin-top: 12px;">
+                    <button type="button" class="tool-btn" id="aiOptimizeBtn" style="flex-shrink: 0;">
+                        ✨ AI智能润色
+                    </button>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #475569; cursor: pointer;">
+                        <input type="checkbox" id="autoOptimize" style="accent-color: #f59e0b;"> 生成时自动润色
+                    </label>
+                </div>
+                <p class="helper" id="optimizeHint">AI自动设计模式下会自动进行提示词润色</p>
+            </div>
+
+            <!-- 输出设置 -->
+            <div class="panel-section">
+                <h2 class="section-title">⚙️ 输出设置</h2>
+                <div style="margin-bottom: 16px;">
+                    <label class="helper">输出比例</label>
+                    <div class="ratio-btn-group" style="margin-top: 8px;">
+                        <button type="button" class="ratio-btn active" data-ratio="1:1"><span class="ratio-icon"></span> 1:1</button>
+                        <button type="button" class="ratio-btn" data-ratio="2:3"><span class="ratio-icon" style="width:10px;height:15px;"></span> 2:3</button>
+                        <button type="button" class="ratio-btn" data-ratio="3:4"><span class="ratio-icon" style="width:10px;height:13px;"></span> 3:4</button>
+                        <button type="button" class="ratio-btn" data-ratio="9:16"><span class="ratio-icon" style="width:9px;height:16px;"></span> 9:16</button>
+                        <button type="button" class="ratio-btn" data-ratio="16:9"><span class="ratio-icon" style="width:16px;height:9px;"></span> 16:9</button>
+                    </div>
+                    <input type="hidden" id="aspectRatio" value="1:1">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label class="helper">输出分辨率</label>
+                    <select id="resolutionSelect" class="model-select" style="margin-top: 6px;">
+                        <option value="1024" selected>1K（1024）</option>
+                        <option value="2048">2K（2048）</option>
+                        <option value="4096">4K（4096）</option>
+                    </select>
+                    <p class="helper">使用 Gemini 3 Pro Image Preview 模型，最高支持 4K 分辨率</p>
+                </div>
+                <!-- 批量生成设置 -->
+                <div id="batchSettings">
+                    <label class="helper">批量生成（未上传背景时可用）</label>
+                    <div style="margin-top: 8px;">
+                        <label class="helper" style="margin: 0; font-size: 11px;">生成数量</label>
+                        <select id="batchCount" class="model-select" style="margin-top: 4px;">
+                            <option value="1" selected>1 张</option>
+                            <option value="2">2 张</option>
+                            <option value="3">3 张</option>
+                            <option value="5">5 张</option>
+                            <option value="10">10 张</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                    <input type="number" id="customBatchCount" class="credential-input" min="1" max="50" value="5" placeholder="输入数量 (1-50)" style="margin-top: 8px; display: none;">
+                    <p class="helper">未上传背景时，AI会为每张海报生成不同的创意背景（全部并发执行）</p>
+                </div>
+            </div>
+
+            <button type="button" class="submit-btn" id="submitBtn">🎨 生成海报</button>
+            <p id="status" class="status"></p>
+            <!-- 批量进度 -->
+            <div id="batchProgress" style="display: none; margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; color: #475569; margin-bottom: 6px;">
+                    <span>生成进度</span>
+                    <span id="progressText">0/0</span>
+                </div>
+                <div style="height: 8px; background: #e8ecf1; border-radius: 4px; overflow: hidden;">
+                    <div id="progressBar" style="height: 100%; background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); width: 0%; transition: width 0.3s;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <!-- 预览区 -->
+            <div class="panel-section" id="outputSection" style="display: none;">
+                <h2 class="section-title">🖼️ 生成结果</h2>
+                <div id="imageOutput" class="history-image-grid"></div>
+            </div>
+
+            <!-- 历史记录 -->
+            <div class="panel-section" style="flex: 1;">
+                <h2 class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>📋 历史记录</span>
+                    <button type="button" class="tool-btn" id="refreshHistory" style="padding: 6px 12px; font-size: 12px;">🔄 刷新</button>
+                </h2>
+                <p id="historyEmpty" class="history-empty">暂无生成记录</p>
+                <div id="taskHistoryList" class="task-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 图片预览弹窗 -->
+    <div class="preview-modal" id="previewModal" onclick="closePreview(event)">
+        <button class="preview-close" onclick="closePreview(event)">✕</button>
+        <img id="previewImage" src="" alt="预览">
+    </div>
+
+    <script src="../scripts/duu-db.js"></script>
+    <script src="../scripts/apikeys.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/image-server.js"></script>
+</body>
+</html>
+
+    <script>
+      // ========== 常量和状态 ==========
+      const API_BASE = '';
+      const MODEL_ENDPOINT = (apiKey) => `${API_BASE}/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const OPTIMIZER_MODEL_ENDPOINT = (apiKey) => `${API_BASE}/v1beta/models/gemini-2.5-flash-lite-nothinking:generateContent?key=${encodeURIComponent(apiKey)}`;
+      
+      // DOM 元素
+      const credentialInput = document.getElementById('credential');
+      const productFileInput = document.getElementById('productFile');
+      const bgFileInput = document.getElementById('bgFile');
+      const productUpload = document.getElementById('productUpload');
+      const bgUpload = document.getElementById('bgUpload');
+      const submitBtn = document.getElementById('submitBtn');
+      const statusEl = document.getElementById('status');
+      const imageOutput = document.getElementById('imageOutput');
+      const outputSection = document.getElementById('outputSection');
+      const historyEmpty = document.getElementById('historyEmpty');
+      const taskHistoryList = document.getElementById('taskHistoryList');
+      const maskSection = document.getElementById('maskSection');
+      const canvasContainer = document.getElementById('canvasContainer');
+      const canvasPlaceholder = document.getElementById('canvasPlaceholder');
+      const bgImage = document.getElementById('bgImage');
+      const maskCanvas = document.getElementById('maskCanvas');
+      const brushSizeInput = document.getElementById('brushSize');
+      const brushSizeValue = document.getElementById('brushSizeValue');
+      const mainTextInput = document.getElementById('mainText');
+      const subTextInput = document.getElementById('subText');
+      const extraText1Input = document.getElementById('extraText1');
+      const extraText2Input = document.getElementById('extraText2');
+      const extraText3Input = document.getElementById('extraText3');
+      const promptInput = document.getElementById('promptInput');
+      const aspectRatioInput = document.getElementById('aspectRatio');
+      const resolutionSelect = document.getElementById('resolutionSelect');
+      const modeHint = document.getElementById('modeHint');
+      const aiOptimizeBtn = document.getElementById('aiOptimizeBtn');
+      const autoOptimizeCheckbox = document.getElementById('autoOptimize');
+      const batchCountSelect = document.getElementById('batchCount');
+      const customBatchCountInput = document.getElementById('customBatchCount');
+      const batchProgress = document.getElementById('batchProgress');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+
+      // 状态
+      let productFile = null;
+      let bgFile = null;
+      let productPreviewUrl = null;
+      let bgPreviewUrl = null;
+      let currentMode = 'auto';
+      let currentTool = 'brush';
+      let isDrawing = false;
+      let maskSaved = false;
+      let maskDataUrl = null;
+      let taskHistory = [];
+      let isGenerating = false;
+      const ctx = maskCanvas.getContext('2d');
+
+      // 初始化缓存
+      const pageCache = new CacheManager('gemini-cpsj');
+
+      // ========== 工具函数 ==========
+      const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          const base64 = result.split(',').pop();
+          resolve({ base64, mimeType: file.type, dataUrl: result });
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+
+      const setStatus = (msg, type = '') => {
+        statusEl.textContent = msg;
+        statusEl.className = type ? `status ${type}` : 'status';
+      };
+
+      const formatDate = (date) => {
+        const d = new Date(date);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      };
+
+      // ========== 初始化 ==========
+      // 初始化 API Key
+      if (window.initApiKeyInput) {
+        window.initApiKeyInput('gemini', 'credential');
+      }
+
+      // API Key 缓存
+      let apiKeyTimer = null;
+      credentialInput.addEventListener('input', (e) => {
+        if (apiKeyTimer) clearTimeout(apiKeyTimer);
+        apiKeyTimer = setTimeout(async () => {
+          const apiKey = e.target.value.trim();
+          if (apiKey) await pageCache.set('apiKey', apiKey, { ttl: null });
+        }, 500);
+      });
+
+      // 恢复缓存
+      (async function restoreCache() {
+        const [cachedApiKey, cachedHistory, cachedTexts] = await Promise.all([
+          pageCache.get('apiKey'),
+          pageCache.get('taskHistory'),
+          pageCache.get('posterTexts')
+        ]);
+        if (cachedApiKey) credentialInput.value = cachedApiKey;
+        if (cachedHistory && Array.isArray(cachedHistory)) {
+          taskHistory = cachedHistory.map(t => ({ ...t, createdAt: new Date(t.createdAt) }));
+          renderHistory();
+        }
+        // 恢复海报文字
+        if (cachedTexts) {
+          if (cachedTexts.mainText) mainTextInput.value = cachedTexts.mainText;
+          if (cachedTexts.subText) subTextInput.value = cachedTexts.subText;
+          if (cachedTexts.extraText1) extraText1Input.value = cachedTexts.extraText1;
+          if (cachedTexts.extraText2) extraText2Input.value = cachedTexts.extraText2;
+          if (cachedTexts.extraText3) extraText3Input.value = cachedTexts.extraText3;
+        }
+      })();
+
+      // 海报文字缓存
+      const saveTextsToCache = async () => {
+        await pageCache.set('posterTexts', {
+          mainText: mainTextInput.value,
+          subText: subTextInput.value,
+          extraText1: extraText1Input.value,
+          extraText2: extraText2Input.value,
+          extraText3: extraText3Input.value
+        }, { ttl: null });
+      };
+
+      // 监听文字输入变化
+      [mainTextInput, subTextInput, extraText1Input, extraText2Input, extraText3Input].forEach(input => {
+        let timer = null;
+        input.addEventListener('input', () => {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(saveTextsToCache, 500);
+        });
+      });
+
+      // ========== 文件上传 ==========
+      productFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        productFile = file;
+        if (productPreviewUrl) URL.revokeObjectURL(productPreviewUrl);
+        productPreviewUrl = URL.createObjectURL(file);
+        productUpload.classList.add('has-image');
+        productUpload.innerHTML = `
+          <input type="file" class="file-input" id="productFile" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;visibility:hidden;pointer-events:none;">
+          <img src="${productPreviewUrl}" alt="商品图">
+          <button type="button" class="delete-btn" onclick="removeProduct(event)">✕</button>
+        `;
+        document.getElementById('productFile').addEventListener('change', arguments.callee);
+      });
+
+      bgFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        bgFile = file;
+        if (bgPreviewUrl) URL.revokeObjectURL(bgPreviewUrl);
+        bgPreviewUrl = URL.createObjectURL(file);
+        bgUpload.classList.add('has-image');
+        bgUpload.innerHTML = `
+          <input type="file" class="file-input" id="bgFile" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;visibility:hidden;pointer-events:none;">
+          <img src="${bgPreviewUrl}" alt="背景图">
+          <button type="button" class="delete-btn" onclick="removeBg(event)">✕</button>
+        `;
+        document.getElementById('bgFile').addEventListener('change', arguments.callee);
+        
+        // 如果是手动模式，加载到画布
+        if (currentMode === 'mask') {
+          loadBgToCanvas(bgPreviewUrl);
+        }
+      });
+
+      window.removeProduct = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        productFile = null;
+        if (productPreviewUrl) URL.revokeObjectURL(productPreviewUrl);
+        productPreviewUrl = null;
+        productUpload.classList.remove('has-image');
+        productUpload.innerHTML = `
+          <input type="file" class="file-input" id="productFile" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;visibility:hidden;pointer-events:none;">
+          <span class="upload-icon">📦</span>
+          <span class="upload-label">上传商品图</span>
+          <span class="upload-hint">必填，你的产品图片</span>
+        `;
+        document.getElementById('productFile').addEventListener('change', productFileInput.onchange);
+      };
+
+      window.removeBg = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        bgFile = null;
+        if (bgPreviewUrl) URL.revokeObjectURL(bgPreviewUrl);
+        bgPreviewUrl = null;
+        bgUpload.classList.remove('has-image');
+        bgUpload.innerHTML = `
+          <input type="file" class="file-input" id="bgFile" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;visibility:hidden;pointer-events:none;">
+          <span class="upload-icon">🖼️</span>
+          <span class="upload-label">上传背景图</span>
+          <span class="upload-hint">可选，不上传则AI生成</span>
+        `;
+        document.getElementById('bgFile').addEventListener('change', bgFileInput.onchange);
+        
+        // 清除画布
+        if (currentMode === 'mask') {
+          bgImage.style.display = 'none';
+          maskCanvas.style.display = 'none';
+          canvasPlaceholder.style.display = 'block';
+          maskSaved = false;
+          maskDataUrl = null;
+        }
+      };
+
+      // 获取润色控制区域
+      const optimizeControls = document.getElementById('optimizeControls');
+      const optimizeHint = document.getElementById('optimizeHint');
+
+      // ========== 模式切换 ==========
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentMode = btn.dataset.mode;
+          
+          if (currentMode === 'mask') {
+            maskSection.style.display = 'block';
+            modeHint.textContent = '在背景图上涂抹标记产品位置，AI会将产品放置到标记区域';
+            // 手动模式显示润色选项
+            optimizeControls.style.display = 'flex';
+            optimizeHint.textContent = '点击"AI智能润色"可根据上传的图片自动生成专业的设计描述，或勾选自动润色在生成时自动优化';
+            if (bgPreviewUrl) loadBgToCanvas(bgPreviewUrl);
+          } else {
+            maskSection.style.display = 'none';
+            modeHint.textContent = 'AI将自动分析商品和背景，智能融合生成海报（自动启用提示词润色）';
+            // AI自动模式隐藏润色选项（因为会自动润色）
+            optimizeControls.style.display = 'none';
+            optimizeHint.textContent = 'AI自动设计模式下会自动进行提示词润色';
+          }
+        });
+      });
+
+      // ========== 画布遮罩 ==========
+      function loadBgToCanvas(url) {
+        const img = new Image();
+        img.onload = () => {
+          bgImage.src = url;
+          bgImage.style.display = 'block';
+          canvasPlaceholder.style.display = 'none';
+          
+          // 设置画布大小
+          const containerWidth = canvasContainer.clientWidth - 40;
+          const scale = Math.min(1, containerWidth / img.width, 500 / img.height);
+          const displayWidth = img.width * scale;
+          const displayHeight = img.height * scale;
+          
+          bgImage.style.width = displayWidth + 'px';
+          bgImage.style.height = displayHeight + 'px';
+          
+          maskCanvas.width = displayWidth;
+          maskCanvas.height = displayHeight;
+          maskCanvas.style.display = 'block';
+          
+          // 清除之前的遮罩
+          ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+          maskSaved = false;
+          maskDataUrl = null;
+        };
+        img.src = url;
+      }
+
+      // 画笔工具
+      document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentTool = btn.dataset.tool;
+        });
+      });
+
+      brushSizeInput.addEventListener('input', () => {
+        brushSizeValue.textContent = brushSizeInput.value;
+      });
+
+      // 绘制遮罩
+      maskCanvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        draw(e);
+      });
+
+      maskCanvas.addEventListener('mousemove', (e) => {
+        if (isDrawing) draw(e);
+      });
+
+      maskCanvas.addEventListener('mouseup', () => isDrawing = false);
+      maskCanvas.addEventListener('mouseleave', () => isDrawing = false);
+
+      // 触摸支持
+      maskCanvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        drawTouch(e);
+      });
+      maskCanvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (isDrawing) drawTouch(e);
+      });
+      maskCanvas.addEventListener('touchend', () => isDrawing = false);
+
+      function draw(e) {
+        const rect = maskCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const size = parseInt(brushSizeInput.value);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+        
+        if (currentTool === 'brush') {
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+          ctx.fill();
+        } else {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      }
+
+      function drawTouch(e) {
+        const touch = e.touches[0];
+        const rect = maskCanvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        const size = parseInt(brushSizeInput.value);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+        
+        if (currentTool === 'brush') {
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+          ctx.fill();
+        } else {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      }
+
+      // 清除遮罩
+      document.getElementById('clearMask').addEventListener('click', () => {
+        ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+        maskSaved = false;
+        maskDataUrl = null;
+        setStatus('遮罩已清除', 'info');
+      });
+
+      // 保存遮罩
+      document.getElementById('saveMask').addEventListener('click', () => {
+        maskDataUrl = maskCanvas.toDataURL('image/png');
+        maskSaved = true;
+        setStatus('遮罩已保存！', 'success');
+      });
+
+      // ========== 比例选择 ==========
+      document.querySelectorAll('.ratio-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          aspectRatioInput.value = btn.dataset.ratio;
+        });
+      });
+
+      // ========== AI 智能润色 ==========
+      const optimizePrompt = async (apiKey) => {
+        const systemPrompt = `# Role
+你是一位精通 "nanobanana" 图像编辑模型的提示词专家。你的核心能力是理解用户的多图参考意图，生成精准、克制且高质量的中文编辑指令。
+
+# Task
+根据用户提供的商品图片和背景图片（如有），生成适用于产品海报设计的中文 Prompt。
+
+# Constraints & Rules
+1. 中文输出：所有的 Prompt 必须使用简体中文。
+2. 命令式句式：使用直接、果断的动作动词开头（如：融合、放置、设计、营造）。
+3. 多图逻辑处理：
+   - 商品图为主体，背景图为场景参考。
+   - 必须清晰界定商品与背景的融合关系。
+4. 克制联想（高保真）：
+   - 严禁随意添加用户未提及的物体或复杂背景。
+   - 仅在材质、光影、清晰度这三个维度进行必要的专业术语补全，以保证生成质量。
+5. 画质增强：在 Prompt 末尾追加 2 个通用的画质增强词。
+
+# Output Format
+直接输出 Prompt 内容，不包含任何解释、前言或额外符号。
+
+# Workflow
+1. 分析商品图，识别产品类型、材质、色彩特征。
+2. 分析背景图（如有），提取场景风格和氛围。
+3. 编写融合指令，确保商品与背景自然协调。
+4. 检查是否过度联想，删除多余的形容词。
+5. 追加画质词。
+
+# Examples
+User: 把这个产品放到这个背景里做海报
+Output: 将商品自然融入背景场景中，保持商品原有的材质质感和光影效果。调整商品透视角度与背景一致，确保光源方向统一。整体构图突出商品主体，背景适当虚化。高画质，细节清晰。
+
+User: 给这个产品设计一个促销海报
+Output: 以商品为视觉中心，设计简洁有力的促销海报。背景采用纯色或渐变，突出商品质感。预留文字排版空间，整体风格现代专业。真实光影，8k分辨率。
+
+# Quality Boosters (随机选择2个)
+(高画质, 细节清晰, 真实光影, 电影级质感, 8k分辨率)`;
+
+        const userPrompt = promptInput.value.trim();
+        const mainText = mainTextInput.value.trim();
+        const subText = subTextInput.value.trim();
+        const extraText1 = extraText1Input.value.trim();
+        const extraText2 = extraText2Input.value.trim();
+        const extraText3 = extraText3Input.value.trim();
+        
+        let instruction = systemPrompt + '\n\n';
+        if (userPrompt) {
+          instruction += `用户的设计需求：${userPrompt}\n\n`;
+        }
+        const allTexts = [mainText, subText, extraText1, extraText2, extraText3].filter(t => t);
+        if (allTexts.length > 0) {
+          instruction += `海报文字要求：${allTexts.join('、')}\n\n`;
+        }
+        instruction += '请分析图片并生成专业的产品海报设计提示词：';
+
+        const parts = [{ text: instruction }];
+        
+        // 添加商品图
+        if (productFile) {
+          const productData = await readFileAsBase64(productFile);
+          parts.push({
+            inline_data: {
+              mime_type: productData.mimeType,
+              data: productData.base64
+            }
+          });
+        }
+        
+        // 添加背景图
+        if (bgFile) {
+          const bgData = await readFileAsBase64(bgFile);
+          parts.push({
+            inline_data: {
+              mime_type: bgData.mimeType,
+              data: bgData.base64
+            }
+          });
+        }
+
+        const body = {
+          contents: [{ role: 'user', parts }]
+        };
+
+        const response = await fetch(OPTIMIZER_MODEL_ENDPOINT(apiKey), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(body)
+        });
+
+        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(`API 错误: ${response.status}`);
+        }
+
+        const json = JSON.parse(responseText);
+        const candidates = json?.candidates || [];
+        let optimizedText = '';
+
+        candidates.forEach(candidate => {
+          candidate.content?.parts?.forEach(part => {
+            if (part.text) {
+              optimizedText += part.text;
+            }
+          });
+        });
+
+        return optimizedText.trim();
+      };
+
+      // AI润色按钮点击
+      aiOptimizeBtn.addEventListener('click', async () => {
+        const apiKey = credentialInput.value.trim();
+        if (!apiKey) {
+          setStatus('请先填写 API Key', 'error');
+          return;
+        }
+        if (!productFile) {
+          setStatus('请先上传商品图', 'error');
+          return;
+        }
+
+        aiOptimizeBtn.disabled = true;
+        aiOptimizeBtn.textContent = '⏳ 正在润色...';
+        setStatus('AI正在分析图片并生成设计描述...', 'info');
+
+        try {
+          const optimizedPrompt = await optimizePrompt(apiKey);
+          if (optimizedPrompt) {
+            promptInput.value = optimizedPrompt;
+            setStatus('✨ 提示词润色完成！', 'success');
+          } else {
+            setStatus('润色结果为空，请重试', 'error');
+          }
+        } catch (error) {
+          console.error('润色失败:', error);
+          setStatus(`润色失败: ${error.message}`, 'error');
+        } finally {
+          aiOptimizeBtn.disabled = false;
+          aiOptimizeBtn.textContent = '✨ AI智能润色';
+        }
+      });
+
+      // ========== 批量数量选择 ==========
+      batchCountSelect.addEventListener('change', () => {
+        customBatchCountInput.style.display = batchCountSelect.value === 'custom' ? 'block' : 'none';
+      });
+
+      // 获取批量数量
+      const getBatchCount = () => {
+        if (bgFile) return 1; // 有背景图时只生成1张
+        if (batchCountSelect.value === 'custom') {
+          return Math.max(1, Math.min(50, parseInt(customBatchCountInput.value) || 1));
+        }
+        return parseInt(batchCountSelect.value) || 1;
+      };
+
+      // 单次生成请求
+      const generateSingle = async (apiKey, productData, extraPrompt, aspectRatio, resolution, index) => {
+        const mainText = mainTextInput.value.trim();
+        const subText = subTextInput.value.trim();
+        const extraText1 = extraText1Input.value.trim();
+        const extraText2 = extraText2Input.value.trim();
+        const extraText3 = extraText3Input.value.trim();
+
+        let prompt = '你是一位专业的产品海报设计师。请根据提供的商品图片创建一张精美的产品宣传海报。\n\n';
+        
+        if (bgFile) {
+          if (currentMode === 'mask' && maskSaved && maskDataUrl) {
+            prompt += '我提供了商品图、背景图和遮罩图。请将商品放置在遮罩标记的红色区域位置，与背景自然融合。\n';
+          } else {
+            prompt += '我提供了商品图和背景图。请将商品自然地融合到背景中，创建和谐的海报效果。\n';
+          }
+        } else {
+          prompt += `请为这个商品生成一个独特且有创意的背景，创建专业的产品海报。这是第 ${index + 1} 个版本，请确保背景风格与其他版本不同。\n`;
+        }
+
+        const allTexts = [
+          mainText && `主标题：${mainText}`,
+          subText && `副标题：${subText}`,
+          extraText1 && `附加文字：${extraText1}`,
+          extraText2 && `附加文字：${extraText2}`,
+          extraText3 && `附加文字：${extraText3}`
+        ].filter(Boolean);
+        
+        if (allTexts.length > 0) {
+          prompt += '\n海报文字要求：\n';
+          allTexts.forEach(t => prompt += `- ${t}\n`);
+          prompt += '请将文字以美观的排版方式融入海报设计中。\n';
+        }
+
+        if (extraPrompt) {
+          prompt += `\n设计风格要求：${extraPrompt}\n`;
+        }
+
+        prompt += `\n输出要求：\n- 比例：${aspectRatio}\n- 高质量、专业的产品海报\n- 商品清晰突出\n- 整体设计协调美观`;
+
+        const parts = [{ text: prompt }];
+        
+        parts.push({
+          inline_data: {
+            mime_type: productData.mimeType,
+            data: productData.base64
+          }
+        });
+
+        if (bgFile) {
+          const bgData = await readFileAsBase64(bgFile);
+          parts.push({
+            inline_data: {
+              mime_type: bgData.mimeType,
+              data: bgData.base64
+            }
+          });
+        }
+
+        if (currentMode === 'mask' && maskSaved && maskDataUrl) {
+          const maskBase64 = maskDataUrl.split(',')[1];
+          parts.push({
+            inline_data: {
+              mime_type: 'image/png',
+              data: maskBase64
+            }
+          });
+        }
+
+        const requestBody = {
+          contents: [{ role: 'user', parts }],
+          generationConfig: {
+            responseModalities: ['IMAGE', 'TEXT'],
+            imageDimension: resolution
+          }
+        };
+
+        const response = await fetch(MODEL_ENDPOINT(apiKey), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        const responseText = await response.text();
+        if (!response.ok) {
+          console.error('API响应错误:', responseText);
+          throw new Error(`API 错误: ${response.status} - ${responseText.substring(0, 200)}`);
+        }
+
+        const json = JSON.parse(responseText);
+        console.log('API响应:', JSON.stringify(json).substring(0, 500));
+        
+        const candidates = json?.candidates || [];
+        const images = [];
+
+        // 检查是否有错误信息
+        if (json?.error) {
+          throw new Error(json.error.message || 'API返回错误');
+        }
+
+        // 检查是否被安全过滤
+        if (candidates.length > 0 && candidates[0].finishReason === 'SAFETY') {
+          throw new Error('内容被安全过滤，请修改描述后重试');
+        }
+
+        candidates.forEach(candidate => {
+          candidate.content?.parts?.forEach(part => {
+            // 支持两种命名格式：inlineData (API返回) 和 inline_data
+            const inlineData = part.inlineData || part.inline_data;
+            if (inlineData) {
+              images.push({
+                mimeType: inlineData.mimeType || inlineData.mime_type,
+                data: inlineData.data
+              });
+            }
+          });
+        });
+
+        if (images.length === 0) {
+          console.warn('未找到图片数据，完整响应:', responseText.substring(0, 1000));
+        }
+
+        return images;
+      };
+
+      // ========== 生成海报 ==========
+      submitBtn.addEventListener('click', async () => {
+        const apiKey = credentialInput.value.trim();
+        if (!apiKey) {
+          setStatus('请填写 API Key', 'error');
+          return;
+        }
+        if (!productFile) {
+          setStatus('请上传商品图', 'error');
+          return;
+        }
+        if (isGenerating) {
+          setStatus('正在生成中，请稍候...', 'info');
+          return;
+        }
+
+        isGenerating = true;
+        submitBtn.disabled = true;
+        
+        const batchCount = getBatchCount();
+        
+        try {
+          const productData = await readFileAsBase64(productFile);
+          let extraPrompt = promptInput.value.trim();
+          const aspectRatio = aspectRatioInput.value;
+          const resolution = resolutionSelect.value;
+
+          // 自动润色逻辑：
+          // - AI自动设计模式：自动启用润色
+          // - 手动标记位置模式：根据勾选决定
+          const shouldOptimize = (currentMode === 'auto') || (currentMode === 'mask' && autoOptimizeCheckbox.checked);
+          
+          if (shouldOptimize && productFile) {
+            setStatus('AI正在优化设计描述...', 'info');
+            try {
+              const optimizedPrompt = await optimizePrompt(apiKey);
+              if (optimizedPrompt) {
+                extraPrompt = optimizedPrompt;
+                promptInput.value = optimizedPrompt;
+              }
+            } catch (e) {
+              console.warn('自动润色失败，使用原始描述:', e);
+            }
+          }
+
+          // 批量生成
+          if (batchCount > 1) {
+            batchProgress.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = `0/${batchCount}`;
+            
+            const BATCH_SIZE = 20; // 每批最大并发数
+            const needBatch = batchCount > BATCH_SIZE;
+            setStatus(`开始批量生成 ${batchCount} 张海报${needBatch ? `（每${BATCH_SIZE}张一批）` : '（全部并发）'}...`, 'info');
+
+            let completed = 0;
+            let failed = 0;
+            const allImages = [];
+
+            // 如果数量大于20，分批执行；否则全部并发
+            if (needBatch) {
+              for (let batchStart = 0; batchStart < batchCount; batchStart += BATCH_SIZE) {
+                const batchEnd = Math.min(batchStart + BATCH_SIZE, batchCount);
+                const currentBatch = batchEnd - batchStart;
+                setStatus(`正在生成第 ${batchStart + 1}-${batchEnd} 张（共${batchCount}张）...`, 'info');
+                
+                const promises = [];
+                for (let i = batchStart; i < batchEnd; i++) {
+                  promises.push(
+                    generateSingle(apiKey, productData, extraPrompt, aspectRatio, resolution, i)
+                      .then(images => {
+                        completed++;
+                        const progress = Math.round((completed / batchCount) * 100);
+                        progressBar.style.width = progress + '%';
+                        progressText.textContent = `${completed}/${batchCount}`;
+                        return images;
+                      })
+                      .catch(err => {
+                        completed++;
+                        failed++;
+                        const progress = Math.round((completed / batchCount) * 100);
+                        progressBar.style.width = progress + '%';
+                        progressText.textContent = `${completed}/${batchCount}`;
+                        console.error(`第 ${i + 1} 张生成失败:`, err);
+                        return [];
+                      })
+                  );
+                }
+                const batchResults = await Promise.all(promises);
+                allImages.push(...batchResults.flat());
+              }
+            } else {
+              // 全部同时并发
+              const promises = [];
+              for (let i = 0; i < batchCount; i++) {
+                promises.push(
+                  generateSingle(apiKey, productData, extraPrompt, aspectRatio, resolution, i)
+                    .then(images => {
+                      completed++;
+                      const progress = Math.round((completed / batchCount) * 100);
+                      progressBar.style.width = progress + '%';
+                      progressText.textContent = `${completed}/${batchCount}`;
+                      setStatus(`已完成 ${completed}/${batchCount}，失败 ${failed}`, 'info');
+                      return images;
+                    })
+                    .catch(err => {
+                      completed++;
+                      failed++;
+                      const progress = Math.round((completed / batchCount) * 100);
+                      progressBar.style.width = progress + '%';
+                      progressText.textContent = `${completed}/${batchCount}`;
+                      console.error(`第 ${i + 1} 张生成失败:`, err);
+                      return [];
+                    })
+                );
+              }
+              const results = await Promise.all(promises);
+              allImages.push(...results.flat());
+            }
+
+            if (allImages.length === 0) {
+              throw new Error('所有生成都失败了，请重试');
+            }
+
+            // 显示结果
+            outputSection.style.display = 'block';
+            imageOutput.innerHTML = allImages.map((img, i) => {
+              const src = `data:${img.mimeType};base64,${img.data}`;
+              return `
+                <div class="history-image">
+                  <img src="${src}" alt="生成结果 ${i+1}" onclick="openPreview('${src}')" style="cursor:zoom-in;">
+                  <div class="history-actions">
+                    <button onclick="downloadImage('${src}', 'poster_${Date.now()}_${i}.png')">📥 下载</button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            // 保存历史
+            const mainText = mainTextInput.value.trim();
+            const subText = subTextInput.value.trim();
+            const entry = {
+              id: `task-${Date.now()}`,
+              createdAt: new Date(),
+              prompt: mainText || subText || extraPrompt || '产品海报',
+              images: allImages
+            };
+            taskHistory.unshift(entry);
+            taskHistory = taskHistory.slice(0, 10);
+            renderHistory();
+            await pageCache.set('taskHistory', taskHistory.map(t => ({
+              ...t,
+              createdAt: t.createdAt.getTime()
+            })), { ttl: null });
+
+            // 云端保存
+            if (window.ImageServer && window.shouldSaveToCloud && shouldSaveToCloud()) {
+              try {
+                const serverImages = allImages.map(img => ({
+                  base64: `data:${img.mimeType};base64,${img.data}`
+                }));
+                await ImageServer.saveGeneration(apiKey, entry.prompt, serverImages, 'gemini-cpsj', 'poster');
+              } catch (e) {
+                console.error('云端保存失败:', e);
+              }
+            }
+
+            setStatus(`✅ 批量生成完成！成功 ${allImages.length} 张，失败 ${failed} 张`, 'success');
+
+          } else {
+            // 单张生成
+            setStatus('正在生成海报，请稍候...', 'info');
+            const images = await generateSingle(apiKey, productData, extraPrompt, aspectRatio, resolution, 0);
+
+            if (images.length === 0) {
+              throw new Error('未生成图片，可能是内容被过滤或API限制，请检查控制台日志');
+            }
+
+            outputSection.style.display = 'block';
+            imageOutput.innerHTML = images.map((img, i) => {
+              const src = `data:${img.mimeType};base64,${img.data}`;
+              return `
+                <div class="history-image">
+                  <img src="${src}" alt="生成结果 ${i+1}" onclick="openPreview('${src}')" style="cursor:zoom-in;">
+                  <div class="history-actions">
+                    <button onclick="downloadImage('${src}', 'poster_${Date.now()}_${i}.png')">📥 下载</button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            const mainText = mainTextInput.value.trim();
+            const subText = subTextInput.value.trim();
+            const entry = {
+              id: `task-${Date.now()}`,
+              createdAt: new Date(),
+              prompt: mainText || subText || extraPrompt || '产品海报',
+              images
+            };
+            taskHistory.unshift(entry);
+            taskHistory = taskHistory.slice(0, 10);
+            renderHistory();
+            await pageCache.set('taskHistory', taskHistory.map(t => ({
+              ...t,
+              createdAt: t.createdAt.getTime()
+            })), { ttl: null });
+
+            if (window.ImageServer && window.shouldSaveToCloud && shouldSaveToCloud()) {
+              try {
+                const serverImages = images.map(img => ({
+                  base64: `data:${img.mimeType};base64,${img.data}`
+                }));
+                await ImageServer.saveGeneration(apiKey, entry.prompt, serverImages, 'gemini-cpsj', 'poster');
+              } catch (e) {
+                console.error('云端保存失败:', e);
+              }
+            }
+
+            setStatus('海报生成成功！', 'success');
+          }
+
+        } catch (error) {
+          console.error('生成失败:', error);
+          setStatus(`生成失败: ${error.message}`, 'error');
+        } finally {
+          isGenerating = false;
+          submitBtn.disabled = false;
+          batchProgress.style.display = 'none';
+        }
+      });
+
+      // ========== 下载图片 ==========
+      window.downloadImage = (src, filename) => {
+        const a = document.createElement('a');
+        a.href = src;
+        a.download = filename;
+        a.click();
+      };
+
+      // ========== 图片预览 ==========
+      const previewModal = document.getElementById('previewModal');
+      const previewImage = document.getElementById('previewImage');
+
+      window.openPreview = (src) => {
+        previewImage.src = src;
+        previewModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      };
+
+      window.closePreview = (e) => {
+        if (e.target === previewModal || e.target.classList.contains('preview-close')) {
+          previewModal.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+      };
+
+      // ESC键关闭预览
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && previewModal.classList.contains('show')) {
+          previewModal.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+      });
+
+      // ========== 刷新历史记录 ==========
+      document.getElementById('refreshHistory').addEventListener('click', async () => {
+        const btn = document.getElementById('refreshHistory');
+        btn.disabled = true;
+        btn.textContent = '刷新中...';
+        
+        try {
+          const cachedHistory = await pageCache.get('taskHistory');
+          if (cachedHistory && Array.isArray(cachedHistory)) {
+            taskHistory = cachedHistory.map(t => ({ ...t, createdAt: new Date(t.createdAt) }));
+          }
+          renderHistory();
+          setStatus('历史记录已刷新', 'success');
+        } catch (e) {
+          console.error('刷新失败:', e);
+          setStatus('刷新失败', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '🔄 刷新';
+        }
+      });
+
+      // ========== 历史记录 ==========
+      function renderHistory() {
+        if (taskHistory.length === 0) {
+          historyEmpty.style.display = 'block';
+          taskHistoryList.innerHTML = '';
+          return;
+        }
+        historyEmpty.style.display = 'none';
+        taskHistoryList.innerHTML = taskHistory.map((task, index) => {
+          const timeStr = formatDate(task.createdAt);
+          const imagesHtml = task.images.map((img, i) => {
+            const src = img.data ? `data:${img.mimeType};base64,${img.data}` : img.url;
+            return `
+              <div class="history-image">
+                <img src="${src}" alt="历史图片" onclick="openPreview('${src}')" style="cursor:zoom-in;">
+                <div class="history-actions">
+                  <button onclick="downloadImage('${src}', 'poster_${task.id}_${i}.png')">📥</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+          
+          return `
+            <div class="history-item">
+              <header>
+                <div class="history-meta">
+                  <strong>任务 #${taskHistory.length - index}</strong>
+                  <span>${timeStr} | ${task.prompt.substring(0, 30)}...</span>
+                </div>
+                <div class="history-actions">
+                  <button onclick="deleteTask('${task.id}')">🗑️ 删除</button>
+                </div>
+              </header>
+              <div class="history-image-grid">${imagesHtml}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      window.deleteTask = async (taskId) => {
+        taskHistory = taskHistory.filter(t => t.id !== taskId);
+        renderHistory();
+        await pageCache.set('taskHistory', taskHistory.map(t => ({
+          ...t,
+          createdAt: t.createdAt.getTime()
+        })), { ttl: null });
+      };
+    </script>

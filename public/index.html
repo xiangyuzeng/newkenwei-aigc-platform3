@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>肯葳科技 - AIGC 图像视频生成平台</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-bg: rgba(37, 99, 235, 0.08);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+
+      --text-dark: #0f172a;
+      --text-body: #334155;
+      --text-muted: #64748b;
+
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --border: rgba(148, 163, 184, 0.22);
+      --border-light: rgba(226, 232, 240, 0.8);
+
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 8px 30px rgba(15, 23, 42, 0.08);
+
+      --radius-sm: 10px;
+      --radius: 14px;
+      --radius-lg: 18px;
+
+      --sidebar-width: 280px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-body);
+      min-height: 100vh;
+    }
+
+    /* Layout */
+    .app-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .logo-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6, #06b6d4);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .logo-subtitle { font-size: 12px; color: var(--text-muted); }
+
+    .sidebar-content { flex: 1; overflow: auto; padding: 14px 12px 16px; }
+    .nav-section { margin-bottom: 16px; }
+    .nav-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 8px 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-item {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-body);
+      font-size: 14px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .nav-item:hover { background: var(--primary-bg); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; box-shadow: 0 10px 24px rgba(37,99,235,0.22); }
+    .nav-icon { width: 20px; text-align: center; }
+    .nav-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.28);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .scm-switch {
+      display: block;
+      text-align: center;
+      padding: 10px;
+      background: var(--primary);
+      color: white;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .scm-switch:hover { background: var(--primary-dark); }
+
+    /* Main */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      position: sticky;
+      top: 0;
+      z-index: 110;
+    }
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-content {
+      flex: 1;
+      padding: 18px 24px 24px;
+      overflow: hidden;
+    }
+    .embed-shell {
+      height: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    .embed-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: transparent;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .hint code {
+      background: rgba(15, 23, 42, 0.06);
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    /* Mobile */
+    .mobile-topbar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      padding: 0 14px;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .mobile-menu-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.35);
+      z-index: 119;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { margin-left: 0; }
+      .mobile-topbar { display: flex; }
+      .page-header { position: static; }
+      .page-content { padding: 12px 14px 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+<div class="logo-text">
+          <span class="logo-title">肯葳科技</span>
+          <span class="logo-subtitle">AIGC Platform</span>
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="nav-section">
+          <div class="nav-section-title">图像处理</div>
+          <div class="nav-item active" data-title="🖼️ 印花图案智能提取" data-src="gemini/tiqu-yinhua.html">
+            <span class="nav-icon">🖼️</span>
+            <span>提取印花</span>
+          </div>
+          <div class="nav-item" data-title="🧩 四图参考" data-src="gemini/situcankao.html">
+            <span class="nav-icon">🧩</span>
+            <span>四图参考</span>
+          </div>
+          <div class="nav-item" data-title="🧩 十图参考" data-src="gemini/shitucankao.html">
+            <span class="nav-icon">🧩</span>
+            <span>十图参考</span>
+          </div>
+          <div class="nav-item" data-title="⚙️ 自定义模式" data-src="gemini/zidingyi.html">
+            <span class="nav-icon">⚙️</span>
+            <span>自定义模式</span>
+          </div>
+          <div class="nav-item" data-title="📦 产品海报" data-src="gemini/cpsj.html">
+            <span class="nav-icon">📦</span>
+            <span>产品海报</span>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Sora 视频</div>
+          <div class="nav-item" data-title="📝 Sora 文生视频" data-src="sora/sorawssp.html">
+            <span class="nav-icon">📝</span>
+            <span>文生视频</span>
+          </div>
+          <div class="nav-item" data-title="🖼️ Sora 图生视频" data-src="sora/sorotssp.html">
+            <span class="nav-icon">🖼️</span>
+            <span>图生视频</span>
+          </div>
+          <div class="nav-item" data-title="📦 Sora 批量图生" data-src="sora/piliang-tssp.html">
+            <span class="nav-icon">📦</span>
+            <span>批量图生</span>
+          </div>
+          <div class="nav-item" data-title="🎭 Sora 创建角色" data-src="sora/soracjjs.html">
+            <span class="nav-icon">🎭</span>
+            <span>创建角色</span>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">VEO 视频</div>
+          <div class="nav-item" data-title="📝 VEO 文生视频" data-src="veo/veowssp.html">
+            <span class="nav-icon">📝</span>
+            <span>文生视频</span>
+          </div>
+          <div class="nav-item" data-title="🖼️ VEO 图生视频" data-src="veo/veotssp.html">
+            <span class="nav-icon">🖼️</span>
+            <span>图生视频</span>
+          </div>
+          <div class="nav-item" data-title="🎞️ VEO 首尾帧" data-src="veo/veoswz.html">
+            <span class="nav-icon">🎞️</span>
+            <span>首尾帧</span>
+          </div>
+          <div class="nav-item" data-title="🧪 VEO 样本自定义" data-src="veo/veoybzdy.html">
+            <span class="nav-icon">🧪</span>
+            <span>样本自定义</span>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Kling 视频</div>
+          <div class="nav-item" data-title="📝 Kling 文生视频" data-src="kling-video/klwssp.html">
+            <span class="nav-icon">📝</span>
+            <span>文生视频</span>
+          </div>
+          <div class="nav-item" data-title="🖼️ Kling 图生视频" data-src="kling-video/kltssp.html">
+            <span class="nav-icon">🖼️</span>
+            <span>图生视频</span>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">AI 对话</div>
+          <div class="nav-item" data-title="💬 GPT 对话" data-src="zhinengti/gpt.html">
+            <span class="nav-icon">💬</span>
+            <span>GPT</span>
+          </div>
+          <div class="nav-item" data-title="💬 Claude 对话" data-src="zhinengti/claude.html">
+            <span class="nav-icon">💬</span>
+            <span>Claude</span>
+          </div>
+          <div class="nav-item" data-title="💬 Gemini 对话" data-src="zhinengti/gemini.html">
+            <span class="nav-icon">💬</span>
+            <span>Gemini</span>
+          </div>
+          <div class="nav-item" data-title="💬 DeepSeek 对话" data-src="zhinengti/deepseek.html">
+            <span class="nav-icon">💬</span>
+            <span>DeepSeek</span>
+          </div>
+          <div class="nav-item" data-title="💬 Grok 对话" data-src="zhinengti/grok.html">
+            <span class="nav-icon">💬</span>
+            <span>Grok</span>
+          </div>
+          <div class="nav-item" data-title="💬 Kimi 对话" data-src="zhinengti/kimi.html">
+            <span class="nav-icon">💬</span>
+            <span>Kimi</span>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">系统</div>
+          <div class="nav-item" data-title="🕐 任务历史" data-src="task-history.html">
+            <span class="nav-icon">🕐</span>
+            <span>任务历史</span>
+            <span class="nav-badge" id="pendingBadge" style="display:none">0</span>
+          </div>
+          <div class="nav-item" data-title="⚙️ 设置" data-src="personal-space.html">
+            <span class="nav-icon">⚙️</span>
+            <span>设置</span>
+          </div>
+          <div class="nav-item" data-title="📊 我的用量" data-src="my-usage.html">
+            <span class="nav-icon">📊</span>
+            <span>我的用量</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="mobile-topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="菜单">☰</button>
+        <div style="font-weight:700;color:var(--text-dark);">肯葳科技</div>
+        <div style="width:42px"></div>
+      </div>
+
+      <div class="page-header">
+        <div class="page-title" id="pageTitle">🖼️ 印花图案智能提取</div>
+</div>
+
+      <div class="page-content">
+        <div class="embed-shell">
+          <iframe id="toolFrame" class="embed-frame" src="gemini/tiqu-yinhua.html" loading="eager"></iframe>
+        </div>
+        <div class="hint">
+          <span>提示：左侧切换功能；如需单独打开某个功能页，可在新标签中直接访问该页面链接。</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Duu scripts -->
+<script src="scripts/announcement.js"></script>
+
+  <script>
+    // ------------------------------
+    // Shell navigation + iframe embedding
+    // ------------------------------
+
+    const EMBED_CSS = `
+      html, body { height: 100%; }
+      body { background: transparent !important; }
+      .top-header, .tab-nav { display: none !important; }
+      .main-content { margin-top: 16px !important; padding-top: 0 !important; }
+      /* Some pages use a different top margin */
+      .main-content, .container, .page-content { scroll-margin-top: 0 !important; }
+    `;
+
+    function applyEmbedTweaks(iframe) {
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc) return;
+
+        // Inject style once
+        if (!doc.getElementById('duu-embed-style')) {
+          const style = doc.createElement('style');
+          style.id = 'duu-embed-style';
+          style.textContent = EMBED_CSS;
+          doc.head.appendChild(style);
+        }
+
+        // Also add a class hook (in case some pages want to use it later)
+        doc.documentElement.classList.add('duu-embed');
+        doc.body && doc.body.classList.add('duu-embed');
+      } catch (e) {
+        // Ignore cross-origin or access errors (should not happen on same-origin)
+      }
+    }
+
+    function setActiveNav(el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function navigateTo(el) {
+      const title = el.getAttribute('data-title') || '功能';
+      const src = el.getAttribute('data-src');
+      if (!src) return;
+
+      // Update UI
+      setActiveNav(el);
+      document.getElementById('pageTitle').textContent = title;
+      document.title = title + ' - 肯葳科技 AIGC 平台';
+
+      // Load iframe
+      const frame = document.getElementById('toolFrame');
+      if (frame.getAttribute('src') !== src) {
+        frame.setAttribute('src', src);
+      }
+
+      // Close sidebar on mobile
+      closeSidebar();
+    }
+
+    // Bind nav clicks
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => navigateTo(item));
+    });
+
+    // Iframe embed tweaks
+    const frame = document.getElementById('toolFrame');
+    frame.addEventListener('load', () => applyEmbedTweaks(frame));
+
+    // ------------------------------
+    // Mobile sidebar
+    // ------------------------------
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+    }
+
+    mobileMenuBtn.addEventListener('click', openSidebar);
+    overlay.addEventListener('click', closeSidebar);
+  </script>
+</body>
+</html>

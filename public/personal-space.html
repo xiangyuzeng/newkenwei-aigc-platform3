@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缓存管理</title>
+    <link rel="stylesheet" href="styles/workspace.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f5f7fa; min-height: 100vh; color: #1e293b; }
+        
+        /* 顶部导航 */
+        .top-header { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .header-btn:hover { background: #f0f2f5; border-color: #d1d5db; }
+        .page-title { font-size: 20px; font-weight: 600; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e8ecf1; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #64748b; }
+        
+        /* 主内容区 */
+        .main-content { margin-top: 72px; padding: 24px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+        
+        /* 公告 */
+        .announcement { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #f59e0b; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px; }
+        .announcement-icon { font-size: 24px; flex-shrink: 0; }
+        .announcement-content { flex: 1; }
+        .announcement-title { font-size: 14px; font-weight: 600; color: #92400e; margin-bottom: 6px; }
+        .announcement-text { font-size: 13px; color: #92400e; line-height: 1.8; }
+        .announcement-text strong { color: #dc2626; font-weight: 700; }
+        .announcement-close { background: none; border: none; font-size: 18px; color: #a16207; cursor: pointer; padding: 0; line-height: 1; }
+        .announcement-close:hover { color: #92400e; }
+        
+        /* 面板 */
+        .panel-section { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; margin-bottom: 20px; }
+        .section-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .section-desc { font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+        
+        /* APIKey管理 */
+        .apikey-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .apikey-card { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+        .apikey-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .apikey-card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; }
+        .apikey-card-icon.gemini { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+        .apikey-card-title { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .apikey-card-subtitle { font-size: 11px; color: #94a3b8; }
+        .apikey-input-group { margin-bottom: 12px; }
+        .apikey-input-label { font-size: 12px; color: #64748b; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .apikey-input-label .badge { padding: 2px 6px; background: #dbeafe; color: #2563eb; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .apikey-input-label .badge.backup { background: #fef3c7; color: #d97706; }
+        .apikey-input { width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: monospace; transition: all 0.2s; }
+        .apikey-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        .apikey-input.has-value { border-color: #10b981; background: #f0fdf4; }
+        .apikey-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .apikey-save-btn { flex: 1; padding: 10px 16px; background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .apikey-save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+        .apikey-clear-btn { padding: 10px 16px; background: #fee2e2; color: #ef4444; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .apikey-clear-btn:hover { background: #fecaca; }
+        .apikey-status { margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 12px; display: none; }
+        .apikey-status.success { display: block; background: #d1fae5; color: #065f46; }
+        .apikey-status.empty { display: block; background: #fef3c7; color: #92400e; }
+        
+        /* 搜索区域 */
+        .search-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+        .search-input { flex: 1; min-width: 200px; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; transition: all 0.2s; }
+        .search-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        .search-btn { padding: 12px 24px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .search-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .clear-btn { padding: 12px 24px; background: #ef4444; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .clear-btn:hover { background: #dc2626; }
+        
+        /* 统计 */
+        .stats-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .stat-item { background: #f8fafc; padding: 12px 20px; border-radius: 10px; font-size: 13px; color: #64748b; }
+        .stat-item strong { color: #6366f1; font-size: 16px; }
+        
+        /* 过滤 */
+        .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-btn { padding: 8px 16px; background: #f1f5f9; border: none; border-radius: 8px; font-size: 13px; color: #64748b; cursor: pointer; transition: all 0.2s; }
+        .filter-btn:hover { background: #e2e8f0; }
+        .filter-btn.active { background: #6366f1; color: #fff; }
+        
+        /* 结果网格 */
+        .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .results-count { font-size: 13px; color: #94a3b8; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        
+        .result-card { background: #f8fafc; border-radius: 12px; overflow: hidden; transition: all 0.2s; border: 1px solid #e2e8f0; cursor: pointer; }
+        .result-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .result-preview { width: 100%; aspect-ratio: 1; background: #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .result-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .result-preview video { width: 100%; height: 100%; object-fit: cover; }
+        .result-type-badge { position: absolute; top: 8px; left: 8px; padding: 4px 10px; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; border-radius: 6px; }
+        .result-info { padding: 16px; }
+        .result-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .result-meta { font-size: 12px; color: #94a3b8; margin-bottom: 12px; }
+        .result-meta span { display: block; margin-bottom: 4px; }
+        .result-actions { display: flex; gap: 8px; }
+        .result-actions button { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+        .btn-download { background: #6366f1; color: #fff; }
+        .btn-download:hover { background: #4f46e5; }
+        .btn-delete { background: #fee2e2; color: #ef4444; }
+        .btn-delete:hover { background: #fecaca; }
+        
+        /* 空状态 */
+        .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .empty-state .icon { font-size: 64px; margin-bottom: 16px; }
+        .empty-state h3 { font-size: 18px; color: #64748b; margin-bottom: 12px; }
+        .empty-state p { font-size: 13px; line-height: 1.8; max-width: 450px; margin: 0 auto; }
+        .empty-state strong { color: #dc2626; font-weight: 700; }
+        
+        /* 提示 */
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: #1e293b; color: #fff; border-radius: 10px; font-size: 14px; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+        .toast.show { opacity: 1; }
+        
+        /* 预览弹窗 */
+        .preview-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        .preview-modal.show { display: flex; }
+        .preview-close { position: absolute; top: 20px; right: 20px; width: 44px; height: 44px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; color: #fff; font-size: 24px; cursor: pointer; transition: all 0.2s; z-index: 10; }
+        .preview-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        .preview-content { max-width: 90vw; max-height: 80vh; display: flex; align-items: center; justify-content: center; }
+        .preview-content img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .preview-content video { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .preview-info { margin-top: 16px; text-align: center; color: #fff; max-width: 600px; }
+        .preview-info .source { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .preview-info .prompt { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; word-break: break-all; }
+        .preview-info .time { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 8px; }
+        .preview-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; color: #fff; font-size: 24px; cursor: pointer; transition: all 0.2s; }
+        .preview-nav:hover { background: rgba(255,255,255,0.2); }
+        .preview-nav.prev { left: 20px; }
+        .preview-nav.next { right: 20px; }
+        .preview-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+        .preview-actions { margin-top: 16px; display: flex; gap: 12px; }
+        .preview-actions button { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+        .preview-actions .btn-download { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; }
+        .preview-actions .btn-download:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+        
+        @media (max-width: 768px) {
+            .search-row { flex-direction: column; }
+            .search-input { width: 100%; }
+            .results-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .results-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="top-header">
+        <div class="header-left">
+        </div>
+        <span class="page-title">缓存管理</span>
+        <div class="header-right">
+            <button class="header-icon-btn">🔔</button>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="announcement" id="announcement">
+            <span class="announcement-icon">⚠️</span>
+            <div class="announcement-content">
+                <div class="announcement-title">缓存管理说明</div>
+                <div class="announcement-text">
+                    此页面展示所有生成的图片和视频缓存。缓存基于<strong>浏览器本地存储</strong>，关闭浏览器依然存在，但<strong>清除浏览器缓存后数据将全部清零</strong>。<br>
+                    <strong style="color: #dc2626;">⚠️ 重要：</strong>删除缓存后，请<strong>刷新其他已打开的页面</strong>（按 F5 或 Ctrl+R）以查看更新。
+                </div>
+            </div>
+            <button class="announcement-close" onclick="document.getElementById('announcement').style.display='none'">✕</button>
+        </div>
+        
+        <!-- 用户状态 -->
+        <section class="panel-section" id="userStatusSection">
+            <div id="userStatusContainer" style="display: flex; align-items: center; gap: 16px;">
+                <!-- 由 JS 动态渲染 -->
+            </div>
+        </section>
+        
+        <!-- 操作栏 -->
+        <section class="panel-section">
+            <div class="search-row">
+                <button class="search-btn" id="refreshBtn">🔄 刷新</button>
+                <button class="search-btn" id="downloadAllBtn" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">📥 全部下载</button>
+                <button class="clear-btn" id="deleteAllBtn">🗑️ 全部删除</button>
+            </div>
+            <div class="stats-row" id="statsRow">
+                <div class="stat-item">图片: <strong id="imageCount">0</strong></div>
+                <div class="stat-item">视频: <strong id="videoCount">0</strong></div>
+                <div class="stat-item">存储占用: <strong id="storageSize">0 MB</strong></div>
+            </div>
+            <div class="filter-row">
+                <button class="filter-btn active" data-type="all">全部</button>
+                <button class="filter-btn" data-type="image">图片</button>
+                <button class="filter-btn" data-type="video">视频</button>
+            </div>
+        </section>
+        
+        <!-- 媒体网格 -->
+        <section class="panel-section">
+            <div class="results-header">
+                <h2 class="section-title">📋 缓存列表</h2>
+                <span class="results-count" id="resultsCount">共 0 项</span>
+            </div>
+            <div class="results-grid" id="resultsGrid">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <h3>暂无缓存</h3>
+                    <p>使用各功能生成图片或视频后，会自动保存到这里。</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <div class="toast" id="toast"></div>
+    
+    <!-- 预览弹窗 -->
+    <div class="preview-modal" id="previewModal">
+        <button class="preview-close" onclick="closePreview()">✕</button>
+        <button class="preview-nav prev" id="prevBtn" onclick="navigatePreview(-1)">‹</button>
+        <button class="preview-nav next" id="nextBtn" onclick="navigatePreview(1)">›</button>
+        <div class="preview-content" id="previewContent"></div>
+        <div class="preview-info" id="previewInfo"></div>
+        <div class="preview-actions">
+            <button class="btn-download" id="previewDownloadBtn">📥 下载</button>
+        </div>
+    </div>
+
+    <script src="scripts/duu-db.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/image-server.js"></script>
+    <script src="scripts/apikeys.js"></script>
+    <!-- JSZip 用于批量下载打包 -->
+    <script src="vendor/jszip.min.js"></script>
+    <script>
+        let allMediaItems = []; // 所有图片和视频（本地）
+        let cloudMediaItems = []; // 云端数据
+        let currentFilter = 'all';
+        let currentPage = 1;
+        let totalPages = 1;
+        let isLoggedIn = false; // 是否登录用户
+        let currentPreviewIndex = -1; // 当前预览的索引
+        let currentPreviewList = []; // 当前预览的列表
+        
+        const showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        };
+        
+        const formatTime = (timestamp) => {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor(diff / (1000 * 60));
+            
+            if (minutes < 1) return '刚刚';
+            if (minutes < 60) return `${minutes}分钟前`;
+            if (hours < 24) return `${hours}小时前`;
+            return date.toLocaleString('zh-CN');
+        };
+        
+        // 渲染用户状态
+        const renderUserStatus = () => {
+            const container = document.getElementById('userStatusContainer');
+            if (!container) return;
+            
+            if (typeof DuuAuth !== 'undefined' && DuuAuth.isLoggedIn()) {
+                isLoggedIn = true;
+                const user = DuuAuth.getUser();
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px;">👤</div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 600; color: #1e293b;">${user.username}</div>
+                            <div style="font-size: 12px; color: #10b981;">☁️ 云端同步已开启</div>
+                        </div>
+                    </div>
+                    <button onclick="DuuAuth.logout()" style="padding: 8px 16px; background: #fee2e2; color: #dc2626; border: none; border-radius: 8px; font-size: 13px; cursor: pointer;">退出登录</button>
+                `;
+            } else {
+                isLoggedIn = false;
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px;">🧩</div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 600; color: #64748b;">本地模式</div>
+                            <div style="font-size: 12px; color: #f59e0b;">💾 数据仅保存在本地</div>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+        
+        // 从服务器加载云端数据
+        const loadCloudData = async (page = 1) => {
+            // 必须登录才能加载云端数据
+            if (!isLoggedIn) {
+                showToast('请先登录账号');
+                return [];
+            }
+            
+            try {
+                console.log('正在加载云端数据...');
+                const data = await ImageServer.getGenerations('', page, 50);
+                console.log('云端数据返回:', data);
+                
+                totalPages = data.totalPages || 1;
+                currentPage = data.page || 1;
+                
+                const items = [];
+                if (data.generations && Array.isArray(data.generations)) {
+                    data.generations.forEach(gen => {
+                        if (gen.images && Array.isArray(gen.images)) {
+                            gen.images.forEach((img, idx) => {
+                                items.push({
+                                    id: `cloud-${gen.id}-${idx}`,
+                                    generationId: gen.id,
+                                    type: 'image',
+                                    data: img.url,
+                                    source: gen.model || '云端',
+                                    prompt: gen.prompt || '无提示词',
+                                    timestamp: new Date(gen.created_at).getTime(),
+                                    fromCloud: true
+                                });
+                            });
+                        }
+                    });
+                }
+                
+                console.log('解析后云端数据项数:', items.length);
+                
+                if (items.length === 0) {
+                    showToast('云端暂无数据');
+                }
+                
+                return items;
+            } catch (error) {
+                console.error('加载云端数据失败:', error);
+                showToast('加载云端数据失败: ' + error.message);
+                return [];
+            }
+        };
+        
+        // 删除云端记录
+        window.deleteCloudMedia = async (generationId) => {
+            if (!confirm('确定要删除这条云端记录吗？')) return;
+            
+            if (!isLoggedIn) {
+                showToast('请先登录账号');
+                return;
+            }
+            
+            try {
+                await ImageServer.deleteGeneration('', generationId);
+                showToast('删除成功');
+                // 重新加载云端数据
+                cloudMediaItems = await loadCloudData(currentPage);
+                renderMedia(cloudMediaItems);
+            } catch (error) {
+                console.error('删除失败:', error);
+                showToast('删除失败: ' + error.message);
+            }
+        };
+        
+        // 从数据库中提取所有图片和视频
+        const extractAllMedia = async () => {
+            await DuuDB.init();
+            const mediaItems = [];
+            const seenIds = new Set(); // 用于去重
+            
+            // 从个人空间获取
+            try {
+                const personalRecords = await DuuDB.getPersonalRecords();
+                personalRecords.forEach(record => {
+                    const uniqueId = `personal-${record.id}`;
+                    if (!seenIds.has(uniqueId)) {
+                        seenIds.add(uniqueId);
+                        mediaItems.push({
+                            id: uniqueId,
+                            dbId: record.id,
+                            type: record.type,
+                            data: record.data,
+                            source: record.source,
+                            prompt: record.title,
+                            timestamp: record.createdAt,
+                            fromPersonal: true
+                        });
+                    }
+                });
+            } catch (e) {
+                console.warn('读取个人空间失败:', e);
+            }
+            
+            // 从任务历史获取
+            const pageKeys = [
+                'gemini-extract', 'gemini-custom', 'gemini-four-ref', 'gemini-ten-ref',
+                'gemini-cpsj', 'kling-image2video', 'kling-text2video'
+            ];
+            const namespaceMap = {
+                'gemini-extract': '提取印花',
+                'gemini-four-ref': '四图参考',
+                'gemini-ten-ref': '十图参考',
+                'gemini-custom': '自定义',
+                'gemini-cpsj': '产品海报',
+                'kling-image2video': '可灵图生视频',
+                'kling-text2video': '可灵文生视频'
+            };
+            
+            for (const pageKey of pageKeys) {
+                try {
+                    const tasks = await DuuDB.getTasks(pageKey);
+                    const sourceName = namespaceMap[pageKey] || pageKey;
+                    
+                    tasks.forEach((task, taskIndex) => {
+                        // 处理图片任务
+                        if (task.images && Array.isArray(task.images)) {
+                            task.images.forEach((image, imageIndex) => {
+                                const imageData = image.url || (image.data ? `data:${image.mimeType || 'image/png'};base64,${image.data}` : null);
+                                if (imageData) {
+                                    const uniqueId = `history-${task.id}-${imageIndex}`;
+                                    if (!seenIds.has(uniqueId)) {
+                                        seenIds.add(uniqueId);
+                                        mediaItems.push({
+                                            id: uniqueId,
+                                            taskId: task.id,
+                                            imageIndex: imageIndex, // 保存图片索引用于删除
+                                            type: 'image',
+                                            data: imageData,
+                                            mimeType: image.mimeType || 'image/png',
+                                            source: sourceName,
+                                            prompt: task.prompt || '无提示词',
+                                            timestamp: task.createdAt || 0,
+                                            fromHistory: true
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                        // 处理视频任务（可灵等）
+                        if (task.videoUrl && task.status === 'completed') {
+                            const uniqueId = `history-${task.id}-video`;
+                            if (!seenIds.has(uniqueId)) {
+                                seenIds.add(uniqueId);
+                                mediaItems.push({
+                                    id: uniqueId,
+                                    taskId: task.id,
+                                    type: 'video',
+                                    data: task.videoUrl,
+                                    source: sourceName,
+                                    prompt: task.prompt || '无提示词',
+                                    timestamp: task.createdAt || 0,
+                                    fromHistory: true
+                                });
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.warn(`读取 ${pageKey} 历史失败:`, e);
+                }
+            }
+            
+            // 按时间倒序
+            mediaItems.sort((a, b) => b.timestamp - a.timestamp);
+            return mediaItems;
+        };
+        
+        // 更新统计
+        const updateStats = (items) => {
+            const imageCount = items.filter(i => i.type === 'image').length;
+            const videoCount = items.filter(i => i.type === 'video').length;
+            
+            // 只计算当前显示项的大小（避免大量数据时卡顿）
+            let totalSize = 0;
+            const sampleItems = items.slice(0, 50); // 只采样前50个
+            sampleItems.forEach(item => {
+                if (item.data && item.data.startsWith('data:')) {
+                    // Base64 数据，估算大小
+                    totalSize += (item.data.length * 0.75);
+                }
+            });
+            // 按比例估算总大小
+            if (sampleItems.length > 0 && items.length > sampleItems.length) {
+                totalSize = totalSize * (items.length / sampleItems.length);
+            }
+            const storageSize = (totalSize / (1024 * 1024)).toFixed(2);
+            
+            document.getElementById('imageCount').textContent = imageCount;
+            document.getElementById('videoCount').textContent = videoCount;
+            document.getElementById('storageSize').textContent = `~${storageSize}`;
+        };
+        
+        // 分页配置
+        const PAGE_SIZE = 50;
+        let localCurrentPage = 1;
+        let currentDisplayItems = [];
+        
+        // 渲染媒体项（带分页）
+        const renderMedia = (items) => {
+            const resultsGrid = document.getElementById('resultsGrid');
+            const resultsCount = document.getElementById('resultsCount');
+            
+            currentDisplayItems = items;
+            
+            if (items.length === 0) {
+                resultsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <h3>暂无缓存</h3>
+                        <p>使用各功能生成图片或视频后，会自动保存到这里。</p>
+                    </div>
+                `;
+                resultsCount.textContent = '共 0 项';
+                renderPagination(0);
+                return;
+            }
+            
+            // 计算分页
+            const totalPages = Math.ceil(items.length / PAGE_SIZE);
+            if (localCurrentPage > totalPages) localCurrentPage = totalPages;
+            const startIdx = (localCurrentPage - 1) * PAGE_SIZE;
+            const endIdx = Math.min(startIdx + PAGE_SIZE, items.length);
+            const pageItems = items.slice(startIdx, endIdx);
+            
+            resultsCount.textContent = `共 ${items.length} 项，显示 ${startIdx + 1}-${endIdx}`;
+            
+            resultsGrid.innerHTML = pageItems.map(item => {
+                const isVideo = item.type === 'video';
+                const isCloud = item.fromCloud;
+                const mediaTag = isVideo 
+                    ? `<video src="${item.data}" preload="metadata"></video>`
+                    : `<img src="${item.data}" alt="缓存图片" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><text x=%2250%%22 y=%2250%%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2220%22>加载失败</text></svg>'">`;
+                
+                const deleteBtn = isCloud 
+                    ? `<button class="btn-delete" onclick="deleteCloudMedia('${item.generationId}')">删除</button>`
+                    : `<button class="btn-delete" onclick="deleteMedia('${item.id}')">删除</button>`;
+                
+                const typeBadge = isCloud ? '☁️ 云端' : (isVideo ? '视频' : '图片');
+                
+                return `
+                    <div class="result-card" data-id="${item.id}" onclick="openPreview('${item.id}')">
+                        <div class="result-preview">
+                            ${mediaTag}
+                            <span class="result-type-badge">${typeBadge}</span>
+                        </div>
+                        <div class="result-info">
+                            <div class="result-title">${item.source}</div>
+                            <div class="result-meta">
+                                <span>${formatTime(item.timestamp)}</span>
+                                <span style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(item.prompt || '').substring(0, 30)}${(item.prompt || '').length > 30 ? '...' : ''}</span>
+                            </div>
+                            <div class="result-actions" onclick="event.stopPropagation()">
+                                <button class="btn-download" onclick="downloadMedia('${item.id}')">下载</button>
+                                ${deleteBtn}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            renderPagination(items.length);
+        };
+        
+        // 渲染分页控件
+        const renderPagination = (totalItems) => {
+            let paginationEl = document.getElementById('paginationContainer');
+            if (!paginationEl) {
+                paginationEl = document.createElement('div');
+                paginationEl.id = 'paginationContainer';
+                paginationEl.style.cssText = 'display:flex;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap;';
+                document.getElementById('resultsGrid').parentNode.appendChild(paginationEl);
+            }
+            
+            if (totalItems <= PAGE_SIZE) {
+                paginationEl.innerHTML = '';
+                return;
+            }
+            
+            const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+            let html = '';
+            
+            // 上一页
+            html += `<button class="filter-btn" onclick="goToLocalPage(${localCurrentPage - 1})" ${localCurrentPage <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>‹ 上一页</button>`;
+            
+            // 页码
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, localCurrentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            if (startPage > 1) {
+                html += `<button class="filter-btn" onclick="goToLocalPage(1)">1</button>`;
+                if (startPage > 2) html += `<span style="padding:8px;color:#94a3b8;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="filter-btn ${i === localCurrentPage ? 'active' : ''}" onclick="goToLocalPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span style="padding:8px;color:#94a3b8;">...</span>`;
+                html += `<button class="filter-btn" onclick="goToLocalPage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            // 下一页
+            html += `<button class="filter-btn" onclick="goToLocalPage(${localCurrentPage + 1})" ${localCurrentPage >= totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>下一页 ›</button>`;
+            
+            paginationEl.innerHTML = html;
+        };
+        
+        // 跳转到指定页
+        window.goToLocalPage = (page) => {
+            const totalPages = Math.ceil(currentDisplayItems.length / PAGE_SIZE);
+            if (page < 1 || page > totalPages) return;
+            localCurrentPage = page;
+            renderMedia(currentDisplayItems);
+            // 滚动到顶部
+            document.getElementById('resultsGrid').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        // 加载所有媒体
+        const loadAllMedia = async () => {
+            try {
+                allMediaItems = await extractAllMedia();
+                // 按时间倒序排列
+                allMediaItems.sort((a, b) => b.timestamp - a.timestamp);
+                updateStats(allMediaItems);
+                localCurrentPage = 1; // 重置页码
+                filterMedia(currentFilter);
+            } catch (error) {
+                console.error('加载失败:', error);
+                showToast('加载失败');
+            }
+        };
+        
+        // 过滤媒体
+        const filterMedia = async (type) => {
+            currentFilter = type;
+            
+            if (type === 'cloud') {
+                if (!isLoggedIn) {
+                    showToast('请先登录账号才能查看云端数据');
+                    return;
+                }
+                // 加载云端数据
+                showToast('正在加载云端数据...');
+                cloudMediaItems = await loadCloudData(1);
+                updateStats(cloudMediaItems);
+                renderMedia(cloudMediaItems);
+                return;
+            }
+            
+            let filtered = allMediaItems;
+            
+            if (type === 'image') {
+                filtered = allMediaItems.filter(i => i.type === 'image');
+            } else if (type === 'video') {
+                filtered = allMediaItems.filter(i => i.type === 'video');
+            }
+            
+            updateStats(filtered);
+            renderMedia(filtered);
+        };
+        
+        // 下载单个媒体
+        window.downloadMedia = (id) => {
+            // 先从本地找，再从云端找
+            let item = allMediaItems.find(i => i.id === id);
+            if (!item) {
+                item = cloudMediaItems.find(i => i.id === id);
+            }
+            if (!item) return;
+            
+            const link = document.createElement('a');
+            link.href = item.data;
+            const ext = item.type === 'video' ? 'mp4' : 'png';
+            link.download = `${item.source}_${Date.now()}.${ext}`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('下载成功');
+        };
+        
+        // 打开预览
+        window.openPreview = (id) => {
+            // 确定当前列表
+            currentPreviewList = currentFilter === 'cloud' ? cloudMediaItems : 
+                (currentFilter === 'image' ? allMediaItems.filter(i => i.type === 'image') :
+                 currentFilter === 'video' ? allMediaItems.filter(i => i.type === 'video') : allMediaItems);
+            
+            currentPreviewIndex = currentPreviewList.findIndex(i => i.id === id);
+            if (currentPreviewIndex === -1) return;
+            
+            showPreviewItem(currentPreviewIndex);
+            document.getElementById('previewModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        };
+        
+        // 显示预览项
+        const showPreviewItem = (index) => {
+            const item = currentPreviewList[index];
+            if (!item) return;
+            
+            const previewContent = document.getElementById('previewContent');
+            const previewInfo = document.getElementById('previewInfo');
+            
+            if (item.type === 'video') {
+                previewContent.innerHTML = `<video src="${item.data}" controls autoplay></video>`;
+            } else {
+                previewContent.innerHTML = `<img src="${item.data}" alt="预览图片">`;
+            }
+            
+            previewInfo.innerHTML = `
+                <div class="source">${item.source}${item.fromCloud ? ' ☁️' : ''}</div>
+                <div class="prompt">${item.prompt || '无提示词'}</div>
+                <div class="time">${formatTime(item.timestamp)}</div>
+            `;
+            
+            // 更新导航按钮状态
+            document.getElementById('prevBtn').disabled = index <= 0;
+            document.getElementById('nextBtn').disabled = index >= currentPreviewList.length - 1;
+            
+            // 绑定下载按钮
+            document.getElementById('previewDownloadBtn').onclick = () => downloadMedia(item.id);
+        };
+        
+        // 导航预览
+        window.navigatePreview = (direction) => {
+            const newIndex = currentPreviewIndex + direction;
+            if (newIndex >= 0 && newIndex < currentPreviewList.length) {
+                currentPreviewIndex = newIndex;
+                showPreviewItem(currentPreviewIndex);
+            }
+        };
+        
+        // 关闭预览
+        window.closePreview = () => {
+            document.getElementById('previewModal').classList.remove('show');
+            document.body.style.overflow = '';
+            // 停止视频播放
+            const video = document.querySelector('#previewContent video');
+            if (video) video.pause();
+        };
+        
+        // 键盘导航
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('previewModal');
+            if (!modal.classList.contains('show')) return;
+            
+            if (e.key === 'Escape') closePreview();
+            if (e.key === 'ArrowLeft') navigatePreview(-1);
+            if (e.key === 'ArrowRight') navigatePreview(1);
+        });
+        
+        // 删除单个媒体
+        window.deleteMedia = async (id) => {
+            if (!confirm('确定要删除这个文件吗？')) return;
+            
+            try {
+                const item = allMediaItems.find(i => i.id === id);
+                if (!item) return;
+                
+                if (item.fromPersonal && item.dbId) {
+                    // 从个人空间删除
+                    await DuuDB.deletePersonal(item.dbId);
+                } else if (item.fromHistory && item.taskId) {
+                    // 使用保存的 imageIndex 删除单张图片
+                    if (typeof item.imageIndex === 'number' && item.type === 'image') {
+                        await DuuDB.deleteTaskImage(item.taskId, item.imageIndex);
+                    } else {
+                        // 视频或无索引，删除整个任务
+                        await DuuDB.deleteTask(item.taskId);
+                    }
+                }
+                
+                showToast('删除成功');
+                await loadAllMedia();
+            } catch (error) {
+                console.error('删除失败:', error);
+                showToast('删除失败');
+            }
+        };
+        
+        // 全部下载 - 打包成 ZIP
+        const downloadAll = async () => {
+            const items = currentFilter === 'cloud' ? cloudMediaItems : 
+                (currentFilter === 'image' ? allMediaItems.filter(i => i.type === 'image') :
+                 currentFilter === 'video' ? allMediaItems.filter(i => i.type === 'video') : allMediaItems);
+            
+            if (items.length === 0) {
+                showToast('没有可下载的文件');
+                return;
+            }
+            
+            if (!confirm(`确定要打包下载 ${items.length} 个文件吗？`)) return;
+            
+            // 检查 JSZip 是否加载
+            if (typeof JSZip === 'undefined') {
+                showToast('正在加载打包组件...');
+                // 降级为逐个下载
+                items.forEach((item, index) => {
+                    setTimeout(() => {
+                        const link = document.createElement('a');
+                        link.href = item.data;
+                        const ext = item.type === 'video' ? 'mp4' : 'png';
+                        link.download = `${item.source}_${index + 1}.${ext}`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }, index * 200);
+                });
+                showToast(`开始下载 ${items.length} 个文件`);
+                return;
+            }
+            
+            showToast('正在打包，请稍候...');
+            
+            try {
+                const zip = new JSZip();
+                const folder = zip.folder('小助手导出_' + new Date().toLocaleDateString('zh-CN').replace(/\//g, '-'));
+                
+                let completed = 0;
+                const total = items.length;
+                
+                for (const item of items) {
+                    try {
+                        const ext = item.type === 'video' ? 'mp4' : 'png';
+                        const fileName = `${item.source}_${completed + 1}.${ext}`;
+                        
+                        // 处理不同类型的数据
+                        if (item.data.startsWith('data:')) {
+                            // Base64 数据
+                            const base64Data = item.data.split(',')[1];
+                            folder.file(fileName, base64Data, { base64: true });
+                        } else if (item.data.startsWith('http')) {
+                            // URL - 需要 fetch
+                            try {
+                                const response = await fetch(item.data);
+                                const blob = await response.blob();
+                                folder.file(fileName, blob);
+                            } catch (e) {
+                                console.warn('下载远程文件失败:', item.data, e);
+                            }
+                        }
+                        
+                        completed++;
+                        if (completed % 5 === 0) {
+                            showToast(`打包中... ${completed}/${total}`);
+                        }
+                    } catch (e) {
+                        console.warn('处理文件失败:', e);
+                    }
+                }
+                
+                showToast('正在生成 ZIP 文件...');
+                
+                const content = await zip.generateAsync({ 
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 }
+                });
+                
+                // 下载 ZIP
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `小助手导出_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+                
+                showToast(`打包完成！共 ${completed} 个文件`);
+            } catch (error) {
+                console.error('打包失败:', error);
+                showToast('打包失败: ' + error.message);
+            }
+        };
+        
+        // 全部删除
+        const deleteAll = async () => {
+            if (allMediaItems.length === 0) {
+                showToast('没有可删除的文件');
+                return;
+            }
+            
+            if (!confirm(`确定要删除全部 ${allMediaItems.length} 个文件吗？此操作不可恢复！`)) return;
+            
+            try {
+                await DuuDB.clearAll();
+                showToast('已删除所有文件');
+                await loadAllMedia();
+            } catch (error) {
+                console.error('删除失败:', error);
+                showToast('删除失败');
+            }
+        };
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 渲染用户状态
+            renderUserStatus();
+            
+            // 根据登录状态显示/隐藏云端按钮
+            if (cloudBtn) {
+                if (isLoggedIn) {
+                    cloudBtn.style.display = 'inline-block';
+                } else {
+                    cloudBtn.style.background = '#e2e8f0';
+                    cloudBtn.style.color = '#94a3b8';
+                    cloudBtn.title = '登录后可查看云端数据';
+                }
+            }
+            
+            await loadAllMedia();
+            
+            document.getElementById('refreshBtn').addEventListener('click', async () => {
+                if (currentFilter === 'cloud') {
+                    cloudMediaItems = await loadCloudData(currentPage);
+                    renderMedia(cloudMediaItems);
+                } else {
+                    await loadAllMedia();
+                }
+                showToast('已刷新');
+            });
+            
+            document.getElementById('downloadAllBtn').addEventListener('click', downloadAll);
+            document.getElementById('deleteAllBtn').addEventListener('click', deleteAll);
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const type = btn.getAttribute('data-type');
+                    filterMedia(type);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

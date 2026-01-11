@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四图参考生成</title>
+    <link rel="stylesheet" href="../styles/workspace.css">
+    <link rel="stylesheet" href="../styles/mobile.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f5f7fa; min-height: 100vh; color: #1e293b; }
+
+        .top-header { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .header-btn:hover { background: #f0f2f5; border-color: #d1d5db; }
+        .page-title { font-size: 20px; font-weight: 600; background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e8ecf1; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #64748b; }
+
+        .tab-nav { background: #fff; padding: 0 24px; border-bottom: 1px solid #e8ecf1; position: fixed; top: 56px; left: 0; right: 0; z-index: 99; height: 48px; display: flex; align-items: center; gap: 8px; }
+        .tab-item { padding: 8px 20px; font-size: 14px; color: #64748b; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .tab-item:hover { background: #f5f7fa; color: #475569; }
+        .tab-item.active { background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); color: #fff; font-weight: 500; }
+
+        .main-content { margin-top: 104px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+        .left-panel, .right-panel { display: flex; flex-direction: column; gap: 20px; }
+        .panel-section { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; }
+        .section-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+
+        .credential-input { width: 100%; padding: 10px 14px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fafbfc; }
+        .credential-input:focus { outline: none; border-color: #ec4899; background: #fff; }
+        .helper { font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.5; }
+
+        /* 四图上传网格 */
+        .image-grid-upload { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .upload-slot { border: 2px dashed #d1d5db; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafbfc; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .upload-slot:hover { border-color: #ec4899; background: #fdf2f8; }
+        .upload-slot.has-image { border-style: solid; border-color: #ec4899; padding: 4px; }
+        .upload-slot .slot-label { font-size: 20px; font-weight: 600; color: #ec4899; margin-bottom: 6px; }
+        .upload-slot .slot-hint { font-size: 11px; color: #94a3b8; }
+        .upload-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+        .upload-slot .delete-btn { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: #fff; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #ef4444; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s; z-index: 10; }
+        .upload-slot .delete-btn:hover { background: #fef2f2; transform: scale(1.1); }
+        .file-input { display: none; }
+
+        /* 提示词输入 */
+        .prompt-textarea { width: 100%; min-height: 120px; padding: 14px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 14px; background: #fafbfc; resize: vertical; line-height: 1.6; }
+        .prompt-textarea:focus { outline: none; border-color: #ec4899; background: #fff; }
+        .prompt-example { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #9d174d; line-height: 1.8; margin-top: 12px; }
+
+        /* 比例按钮组 */
+        .ratio-btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ratio-btn { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border: 1px solid #e8ecf1; border-radius: 20px; font-size: 13px; color: #475569; background: #fff; cursor: pointer; transition: all 0.2s; }
+        .ratio-btn:hover { border-color: #ec4899; background: #fdf2f8; }
+        .ratio-btn.active { background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); color: #fff; border-color: transparent; }
+        .ratio-icon { width: 14px; height: 14px; border: 1.5px solid currentColor; border-radius: 2px; flex-shrink: 0; }
+
+        /* 分辨率选择 */
+        .model-select { width: 100%; padding: 10px 14px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fff; cursor: pointer; }
+        .model-select:focus { outline: none; border-color: #ec4899; }
+
+        .submit-btn { width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3); }
+        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+        .status:empty { display: none; }
+        .status.success { background: #ecfdf5; color: #059669; }
+        .status.error { background: #fef2f2; color: #dc2626; }
+        .status.warning { background: #fffbeb; color: #d97706; }
+
+        .task-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .task-desc { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+        .view-all-btn { padding: 6px 14px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 6px; font-size: 12px; color: #64748b; cursor: pointer; }
+        .view-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+        .history-empty { text-align: center; color: #94a3b8; font-size: 13px; padding: 40px 20px; }
+
+        .history-item { background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 10px; padding: 16px; }
+        .history-item header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .history-meta { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #64748b; }
+        .history-meta strong { color: #1e293b; font-size: 14px; }
+        .history-actions button { padding: 6px 12px; background: #fff; border: 1px solid #e8ecf1; border-radius: 6px; font-size: 12px; color: #475569; cursor: pointer; }
+        .history-actions button:hover:not(:disabled) { border-color: #ec4899; color: #ec4899; }
+        .history-image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+        .history-image img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid #e8ecf1; }
+        .history-image .history-actions { margin-top: 8px; }
+        .history-image .history-actions button { width: 100%; font-size: 11px; }
+
+        .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+        .image-grid figure { margin: 0; }
+        .image-grid img { width: 100%; border-radius: 8px; border: 1px solid #e8ecf1; }
+        .image-grid figcaption { font-size: 12px; color: #64748b; margin-top: 6px; }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .tab-nav { overflow-x: auto; padding: 0 16px; }
+            .main-content { padding: 16px; }
+            .image-grid-upload { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="top-header">
+        <div class="header-left">
+        </div>
+        <span class="page-title">四图参考小助手</span>
+        <div class="header-right">
+            <button class="header-icon-btn">🔔</button>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <a href="tiqu-yinhua.html" class="tab-item">提取印花</a>
+        <a href="situcankao.html" class="tab-item active">四图参考</a>
+        <a href="shitucankao.html" class="tab-item">十图参考</a>
+        <a href="zidingyi.html" class="tab-item">自定义</a>
+        <a href="cpsj.html" class="tab-item">产品海报</a>
+    </nav>
+
+    <main class="main-content">
+        <div class="left-panel">
+            <div class="panel-section">
+                <h2 class="section-title">APIKey填写区</h2>
+                <input type="password" id="credential" class="credential-input" placeholder="粘贴访问凭证" required autocomplete="off">
+                <p class="helper">填写DUU调用站的APIkey，建议创建apikey分组为限时特价、优质gemini、官转gemini</p>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">输入提示词</h2>
+                <textarea id="prompt-input" class="prompt-textarea" placeholder="用简单大白话写出你的需要..."></textarea>
+                <div class="prompt-example">
+                    💡 示例：图1的人物穿图2的衣服，带图3的帽子，拿图4的包...
+                </div>
+                <div style="margin-top: 12px;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #475569; cursor: pointer;">
+                        <input type="checkbox" id="optimize-toggle" style="accent-color: #ec4899;"> 启用提示词优化（AI分析图片生成优化提示词）
+                    </label>
+                    <p class="helper">开启后，AI会先分析图片内容，生成针对性的提示词，生成效果更精准</p>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">上传参考图片（最多4张）</h2>
+                <div class="image-grid-upload" id="upload-grid">
+                    <!-- 4个上传槽位将由JS生成 -->
+                </div>
+                <p class="helper" style="margin-top: 12px;">使用 Gemini 3 Pro Image Preview 模型，支持同时上传最多4张参考图片，支持分辨率选择</p>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">输出设置</h2>
+                <div style="margin-bottom: 16px;">
+                    <label class="helper">输出比例</label>
+                    <div class="ratio-btn-group" style="margin-top: 8px;">
+                        <button type="button" class="ratio-btn active" data-ratio="1:1"><span class="ratio-icon"></span> 1:1</button>
+                        <button type="button" class="ratio-btn" data-ratio="2:3"><span class="ratio-icon" style="width:12px;height:18px;"></span> 2:3</button>
+                        <button type="button" class="ratio-btn" data-ratio="3:4"><span class="ratio-icon" style="width:12px;height:16px;"></span> 3:4</button>
+                        <button type="button" class="ratio-btn" data-ratio="3:2"><span class="ratio-icon" style="width:18px;height:12px;"></span> 3:2</button>
+                        <button type="button" class="ratio-btn" data-ratio="4:3"><span class="ratio-icon" style="width:16px;height:12px;"></span> 4:3</button>
+                        <button type="button" class="ratio-btn" data-ratio="16:9"><span class="ratio-icon" style="width:16px;height:9px;"></span> 16:9</button>
+                    </div>
+                    <input type="hidden" id="aspect-ratio" value="1:1">
+                </div>
+                <div>
+                    <label class="helper">输出分辨率</label>
+                    <select id="resolution-select" class="model-select" style="margin-top: 6px;">
+                        <option value="1024" selected>1K（1024）</option>
+                        <option value="2048">2K（2048）</option>
+                        <option value="4096">4K（4096）</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="button" class="submit-btn" id="submitBtn">✨ 开始生成</button>
+            <p id="status" class="status" aria-live="polite"></p>
+
+            <div class="panel-section" id="output-section" hidden>
+                <h2 class="section-title">生成结果</h2>
+                <div id="image-output" class="image-grid"></div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="panel-section" style="flex: 1;">
+                <div class="task-header">
+                    <h2 class="section-title" style="margin-bottom: 0;">任务历史</h2>
+                    <button class="view-all-btn" id="download-all-images" disabled>下载全部图片</button>
+                </div>
+                <p class="task-desc">生成图片大约需要2-4分钟，展示最新任务记录</p>
+                <p id="history-empty" class="history-empty">暂无任务记录</p>
+                <div id="task-history-list" class="task-list" aria-live="polite"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../scripts/duu-db.js"></script>
+    <script src="../scripts/apikeys.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/image-server.js"></script>
+    <script>
+      // DOM 元素
+      const statusEl = document.getElementById("status");
+      const imageOutput = document.getElementById("image-output");
+      const outputSection = document.getElementById("output-section");
+      const credentialInput = document.getElementById("credential");
+      const promptInput = document.getElementById("prompt-input");
+      const submitBtn = document.getElementById("submitBtn");
+      const resolutionSelect = document.getElementById("resolution-select");
+      const taskHistoryList = document.getElementById("task-history-list");
+      const historyEmptyState = document.getElementById("history-empty");
+      const downloadAllBtn = document.getElementById("download-all-images");
+      const uploadGrid = document.getElementById("upload-grid");
+      const responseModalitiesInput = document.createElement('input');
+      responseModalitiesInput.type = 'hidden';
+      responseModalitiesInput.value = 'IMAGE';
+      document.body.appendChild(responseModalitiesInput);
+
+      // 初始化缓存系统
+      const pageCache = new CacheManager('gemini-four-ref');
+      
+      // API Key 缓存 - 输入时自动保存（带防抖）
+      let apiKeyTimer = null;
+      if (credentialInput) {
+        credentialInput.addEventListener('input', (e) => {
+          const apiKey = e.target.value.trim();
+          if (apiKeyTimer) clearTimeout(apiKeyTimer);
+          apiKeyTimer = setTimeout(async () => {
+            if (apiKey) {
+              await pageCache.set('apiKey', apiKey, { ttl: null });
+            }
+          }, 500);
+        });
+      }
+      
+      // 提示词缓存 - 输入时自动保存（带防抖）
+      let promptTimer = null;
+      if (promptInput) {
+        promptInput.addEventListener('input', (e) => {
+          const prompt = e.target.value.trim();
+          if (promptTimer) clearTimeout(promptTimer);
+          promptTimer = setTimeout(async () => {
+            await pageCache.set('prompt', prompt, { ttl: null });
+          }, 500);
+        });
+      }
+      
+      // 初始化全局APIKey
+      if (window.initApiKeyInput) {
+        window.initApiKeyInput('gemini', 'credential');
+      }
+
+      // 图片槽位状态 (1-4)
+      const imageSlots = {};
+      const previewUrls = {};
+      const slotMetadata = {};
+      for (let i = 1; i <= 4; i++) {
+        imageSlots[i] = null;
+        previewUrls[i] = null;
+        slotMetadata[i] = null;
+      }
+      let taskHistory = [];
+      let isRestoring = false;
+
+      const TASK_STATE_KEY = 'gemini_four_ref_last_task';
+      const TASK_STATE_VERSION = 1;
+      const TASK_STATE_EXPIRY_MS = 12 * 60 * 60 * 1000;
+      const MAX_HISTORY_ENTRIES = 10;
+
+      const pruneHistory = (history = []) => history.slice(0, MAX_HISTORY_ENTRIES);
+
+      const prepareHistoryForStorage = (history = []) =>
+        pruneHistory(history).map((entry) => ({
+          ...entry,
+          createdAt: entry.createdAt instanceof Date ? entry.createdAt.getTime() : entry.createdAt,
+        }));
+
+      const restoreHistoryFromStorage = (history = []) =>
+        history.map((entry) => ({
+          ...entry,
+          createdAt: entry.createdAt ? new Date(entry.createdAt) : new Date(),
+        }));
+
+      const setStatus = (message = '', type = '') => {
+        const normalizedType = typeof type === 'string' ? type.trim() : '';
+        statusEl.textContent = message;
+        statusEl.className = normalizedType ? `status ${normalizedType}` : 'status';
+      };
+
+      // 模型配置 - 使用 Gemini 3 Pro Image Preview
+      const MODEL_ENDPOINT = (apiKey) => `/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${encodeURIComponent(apiKey)}`;
+      
+      // 提示词优化模型配置
+      const OPTIMIZER_MODEL_ENDPOINT = (apiKey) => `/v1beta/models/gemini-2.5-flash-lite-nothinking:generateContent?key=${encodeURIComponent(apiKey)}`;
+      
+      // 获取优化开关元素
+      const optimizeToggle = document.getElementById("optimize-toggle");
+      
+      // 为图片生成优化提示词
+      const optimizePromptForImages = async (imageSlots, credential) => {
+        const systemPrompt = `# Role
+你是一位精通 "nanobanana" 图像编辑模型的提示词专家。你的核心能力是理解用户的多图参考意图，生成精准、克制且高质量的中文编辑指令。
+
+# Task
+根据用户的自然语言描述，生成适用于 nanobanana 的中文 Prompt。
+
+# Constraints & Rules
+1. 中文输出：所有的 Prompt 必须使用简体中文。
+2. 命令式句式：使用直接、果断的动作动词开头（如：替换、修改、融合、保持、提取）。
+3. 多图逻辑处理：
+   - 用户可能提供多张参考图（参考图1、参考图2...）和一张目标图。
+   - 必须清晰界定"参考源"与"目标对象"的关系（例如："提取参考图1的风格赋予目标图"、"将参考图2的物体融合进目标图"）。
+4. 克制联想（高保真）：
+   - 严禁随意添加用户未提及的物体或复杂背景。
+   - 仅在材质、光影、清晰度这三个维度进行必要的专业术语补全，以保证生成质量。
+5. 画质增强：在 Prompt 末尾追加 2 个通用的画质增强词。
+
+# Output Format
+直接输出 Prompt 内容，不包含任何解释、前言或额外符号。
+
+# Workflow
+1. 分析用户输入，识别涉及的图片数量及各自的角色（参考 vs 目标）。
+2. 提取核心动作（换脸、换装、风格迁移、背景替换等）。
+3. 编写中文指令，确保指代明确（如"将参考图A的..."）。
+4. 检查是否过度联想，删除多余的形容词。
+5. 追加画质词。
+
+# Examples
+User: 把这张图里的人换成这几张参考图里的那个模特，衣服不要变。
+Output: 保持目标图中的服装和背景不变，将人物面部和体型替换为参考图中的模特特征。确保面部光影与原环境完美融合，皮肤质感真实自然。高画质，细节清晰。
+
+User: 用参考图1的配色和参考图2的画风，重绘这张草图。
+Output: 提取参考图1的色彩方案，结合参考图2的绘画风格，对目标草图进行上色和细化重绘。保持草图原有的构图和轮廓，色彩过渡自然。杰作，高分辨率。
+
+User: 给这个杯子加个盖子。
+Output: 在杯子上方添加一个材质匹配的盖子。确保盖子的透视角度、光影反射与杯身一致。真实感，8k画质。
+
+# Quality Boosters (Randomly pick 2)
+(高画质, 细节清晰, 真实光影, 电影级质感, 8k分辨率)`;
+
+        // 获取用户输入的原始提示词
+        const userPrompt = promptInput.value.trim();
+        const userInstruction = userPrompt 
+          ? `${systemPrompt}\n\n用户需求：${userPrompt}\n\n请分析这4张参考图片，根据用户需求生成优化后的提示词：`
+          : `${systemPrompt}\n\n请分析这4张参考图片，识别各图的核心元素并生成创意组合提示词：`;
+
+        const parts = [{ text: userInstruction }];
+        
+        // 添加所有已上传的图片
+        for (let i = 1; i <= 4; i++) {
+          if (imageSlots[i]) {
+            const { base64, mimeType } = await readFileAsBase64(imageSlots[i]);
+            parts.push({
+              inline_data: {
+                mime_type: mimeType || "image/jpeg",
+                data: base64,
+              },
+            });
+          }
+        }
+
+        const body = {
+          contents: [
+            {
+              role: "user",
+              parts: parts,
+            },
+          ],
+        };
+
+        const response = await fetch(OPTIMIZER_MODEL_ENDPOINT(credential), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${credential}`,
+          },
+          body: JSON.stringify(body),
+        });
+
+        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(`${response.status} ${response.statusText}\n${responseText}`);
+        }
+
+        let json;
+        try {
+          json = JSON.parse(responseText);
+        } catch (error) {
+          throw new Error("响应已返回，但解析 JSON 失败。");
+        }
+
+        const candidates = json?.candidates || [];
+        let optimizedText = "";
+
+        candidates.forEach((candidate) => {
+          candidate.content?.parts?.forEach((part) => {
+            if (part.text) {
+              optimizedText += part.text;
+            }
+          });
+        });
+
+        return optimizedText.trim() || promptInput.value.trim();
+      };
+
+      // 初始化上传槽位
+      const initUploadSlots = () => {
+        uploadGrid.innerHTML = '';
+        for (let i = 1; i <= 4; i++) {
+          const slot = document.createElement('label');
+          slot.className = 'upload-slot';
+          slot.id = `slot-${i}`;
+          slot.dataset.slot = i;
+          slot.innerHTML = `
+            <input type="file" class="file-input" accept="image/*" data-slot="${i}">
+            <span class="slot-label">图${i}</span>
+            <span class="slot-hint">点击上传</span>
+          `;
+          uploadGrid.appendChild(slot);
+          
+          slot.querySelector('input[type="file"]').addEventListener('change', handleFileChange);
+        }
+      };
+
+      // 工具函数
+      const readFileAsBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            const base64 = result.split(",").pop();
+            resolve({ base64, mimeType: file.type });
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+
+      const escapeHtml = (value) =>
+        value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+      const formatDate = (date) =>
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+
+      const getExtensionFromMime = (mimeType = "") => {
+        const [, subtype = "png"] = mimeType.split("/");
+        return subtype.split("+")[0];
+      };
+
+      const buildImageHref = ({ mimeType, data, url }) =>
+        url || `data:${mimeType || "image/png"};base64,${data}`;
+
+      // 文件上传处理
+      const handleFileChange = (e) => {
+        const slotNum = parseInt(e.target.dataset.slot, 10);
+        const file = e.target.files[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        
+        imageSlots[slotNum] = file;
+        if (previewUrls[slotNum]) URL.revokeObjectURL(previewUrls[slotNum]);
+        
+        const objectUrl = URL.createObjectURL(file);
+        previewUrls[slotNum] = objectUrl;
+        
+        const slot = document.getElementById(`slot-${slotNum}`);
+        slot.classList.add('has-image');
+        slot.innerHTML = `
+          <input type="file" class="file-input" accept="image/*" data-slot="${slotNum}">
+          <img src="${objectUrl}" alt="图${slotNum}">
+          <button type="button" class="delete-btn" data-slot="${slotNum}">✕</button>
+        `;
+        
+        slot.querySelector('input[type="file"]').addEventListener('change', handleFileChange);
+        slot.querySelector('.delete-btn').addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          removeImage(slotNum);
+        });
+      };
+
+      const removeImage = (slotNum) => {
+        imageSlots[slotNum] = null;
+        if (previewUrls[slotNum]) {
+          URL.revokeObjectURL(previewUrls[slotNum]);
+          previewUrls[slotNum] = null;
+        }
+        
+        const slot = document.getElementById(`slot-${slotNum}`);
+        slot.classList.remove('has-image');
+        slot.innerHTML = `
+          <input type="file" class="file-input" accept="image/*" data-slot="${slotNum}">
+          <span class="slot-label">图${slotNum}</span>
+          <span class="slot-hint">点击上传</span>
+        `;
+        
+        slot.querySelector('input[type="file"]').addEventListener('change', handleFileChange);
+      };
+
+      // 比例按钮切换
+      const ratioBtns = document.querySelectorAll(".ratio-btn");
+      const aspectRatioInput = document.getElementById("aspect-ratio");
+      ratioBtns.forEach(btn => {
+        btn.addEventListener("click", async () => {
+          ratioBtns.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          aspectRatioInput.value = btn.dataset.ratio;
+          if (!isRestoring) {
+            await pageCache.set('aspectRatio', btn.dataset.ratio, { ttl: null });
+          }
+        });
+      });
+
+      resolutionSelect.addEventListener('change', async () => {
+        if (!isRestoring) {
+          await pageCache.set('resolution', resolutionSelect.value, { ttl: null });
+        }
+      });
+
+      // 加载状态
+      const toggleLoading = (isLoading) => {
+        submitBtn.disabled = isLoading;
+        if (isLoading) {
+          setStatus('正在生成图片，请稍候...');
+        }
+      };
+
+      // 任务历史渲染
+      const renderHistory = () => {
+        taskHistory = pruneHistory(taskHistory);
+        if (taskHistory.length === 0) {
+          historyEmptyState.hidden = false;
+          taskHistoryList.innerHTML = "";
+          downloadAllBtn.disabled = true;
+          return;
+        }
+        historyEmptyState.hidden = true;
+        taskHistoryList.innerHTML = taskHistory.map((entry, index) => {
+          const position = taskHistory.length - index;
+          const headerTitle = `任务 #${position}`;
+          const createdAt = entry.createdAt instanceof Date ? entry.createdAt : new Date(entry.createdAt);
+          const metaLines = [
+            `<span><strong>时间：</strong>${formatDate(createdAt)}</span>`,
+            `<span><strong>提示词：</strong>${escapeHtml((entry.prompt || "(空)").substring(0, 40))}...</span>`,
+          ];
+          const imageContent = entry.images.length
+            ? entry.images.map((image, imageIndex) => {
+                const href = buildImageHref(image);
+                const extension = getExtensionFromMime(image.mimeType);
+                const preview = image.data ? href : image.url;
+                return `
+                  <article class="history-image">
+                    <img src="${preview}" alt="生成图像" loading="lazy" />
+                    <div class="history-actions">
+                      <button type="button" data-role="download-image" data-task="${entry.id}" data-index="${imageIndex}">
+                        下载 (${extension.toUpperCase()})
+                      </button>
+                    </div>
+                  </article>
+                `;
+              }).join("")
+            : `<p class="helper">本次响应没有图像输出。</p>`;
+          return `
+            <article class="history-item" data-task="${entry.id}">
+              <header>
+                <div class="history-meta">
+                  <strong>${headerTitle}</strong>
+                  ${metaLines.join("")}
+                </div>
+                <div class="history-actions">
+                  <button type="button" data-role="download-task" data-task="${entry.id}" ${entry.images.length === 0 ? "disabled" : ""}>
+                    下载该项 (${entry.images.length})
+                  </button>
+                  <button type="button" data-role="delete-task" data-task="${entry.id}" style="margin-left: 8px; color: #ef4444;">
+                    删除
+                  </button>
+                </div>
+              </header>
+              <div class="history-image-grid">${imageContent}</div>
+            </article>
+          `;
+        }).join("");
+        downloadAllBtn.disabled = !taskHistory.some((entry) => entry.images.length > 0);
+      };
+
+      const recordTask = async ({ prompt, images }) => {
+        const entry = {
+          id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          createdAt: new Date(),
+          prompt,
+          images,
+        };
+        taskHistory.unshift(entry);
+        taskHistory = pruneHistory(taskHistory);
+        renderHistory();
+        await pageCache.set('taskHistory', prepareHistoryForStorage(taskHistory), { ttl: null });
+        
+        // 保存到服务器
+        const apiKey = credentialInput.value.trim();
+        if (apiKey && images.length > 0) {
+          try {
+            const serverImages = images.map(img => {
+              if (img.data && img.mimeType) {
+                return { base64: `data:${img.mimeType};base64,${img.data}` };
+              }
+              if (img.url) {
+                return { url: img.url };
+              }
+              return img;
+            });
+            await ImageServer.saveGeneration(apiKey, prompt, serverImages, 'gemini-situcankao', 'multi');
+          } catch (e) {
+            console.warn('保存到服务器失败:', e);
+          }
+        }
+      };
+
+      // 下载功能
+      const triggerDownload = (href, filename) => {
+        const link = document.createElement("a");
+        link.href = href;
+        link.download = filename;
+        link.rel = "noopener";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      downloadAllBtn.addEventListener("click", () => {
+        const downloadables = taskHistory.flatMap((entry, entryIndex) =>
+          entry.images.map((image, imageIndex) => ({
+            href: buildImageHref(image),
+            filename: `${entry.id}-${String(imageIndex + 1).padStart(2, "0")}.${getExtensionFromMime(image.mimeType)}`,
+            order: entryIndex * 100 + imageIndex,
+          }))
+        );
+        if (downloadables.length === 0) {
+          setStatus('暂无可下载的图像。', '');
+          return;
+        }
+        downloadables.sort((a, b) => a.order - b.order).forEach((item, index) => {
+          setTimeout(() => triggerDownload(item.href, item.filename), index * 180);
+        });
+        setStatus(`已开始下载 ${downloadables.length} 张图像。`, 'success');
+      });
+
+      taskHistoryList.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-role]");
+        if (!button) return;
+        const taskId = button.getAttribute("data-task");
+        const entry = taskHistory.find((item) => item.id === taskId);
+        if (!entry) return;
+        if (button.dataset.role === "download-task") {
+          entry.images.forEach((image, index) => {
+            const extension = getExtensionFromMime(image.mimeType);
+            const filename = `${entry.id}-${String(index + 1).padStart(2, "0")}.${extension}`;
+            setTimeout(() => triggerDownload(buildImageHref(image), filename), index * 150);
+          });
+          return;
+        }
+        if (button.dataset.role === "download-image") {
+          const imageIndex = Number(button.getAttribute("data-index"));
+          const image = entry.images[imageIndex];
+          if (!image) return;
+          const extension = getExtensionFromMime(image.mimeType);
+          const filename = `${entry.id}-${String(imageIndex + 1).padStart(2, "0")}.${extension}`;
+          triggerDownload(buildImageHref(image), filename);
+        }
+        if (button.dataset.role === "delete-task") {
+          if (confirm('确定要删除这个任务吗？')) {
+            taskHistory = taskHistory.filter((item) => item.id !== taskId);
+            renderHistory();
+            pageCache.set('taskHistory', prepareHistoryForStorage(taskHistory), { ttl: null });
+          }
+        }
+      });
+
+      // API 请求
+      const buildRequestBody = async (customPrompt = null) => {
+        const prompt = customPrompt || promptInput.value.trim();
+        const aspectRatio = aspectRatioInput.value;
+        const targetResolution = Number(resolutionSelect.value);
+        
+        const parts = [{ text: prompt }];
+        
+        // 添加所有已上传的图片
+        for (let i = 1; i <= 4; i++) {
+          if (imageSlots[i]) {
+            const { base64, mimeType } = await readFileAsBase64(imageSlots[i]);
+            parts.push({
+              inline_data: {
+                mime_type: mimeType || "image/jpeg",
+                data: base64,
+              },
+            });
+          }
+        }
+        
+        return {
+          contents: [{ role: "user", parts }],
+          generationConfig: {
+            responseModalities: ["IMAGE"],
+            imageConfig: { 
+              aspectRatio,
+              targetResolution,
+            },
+          },
+        };
+      };
+
+      // 执行API请求（支持自动切换备用Key）
+      const executeRequest = async (body, apiKey) => {
+        const doRequest = async (key) => {
+          const response = await fetch(MODEL_ENDPOINT(key), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${key}`,
+            },
+            body: JSON.stringify(body),
+          });
+
+          const responseText = await response.text();
+          if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}\n${responseText}`);
+          }
+
+          let json;
+          try {
+            json = JSON.parse(responseText);
+          } catch (error) {
+            throw new Error("响应已返回，但解析 JSON 失败。");
+          }
+          return { json };
+        };
+
+        // 获取备用Key
+        const backupKey = window.DuuApiKeys ? window.DuuApiKeys.getBackup('gemini') : '';
+
+        try {
+          return await doRequest(apiKey);
+        } catch (error) {
+          const errorMsg = error.message || '';
+          // 判断是否需要切换Key
+          if (backupKey && backupKey !== apiKey && window.shouldRetryWithBackup && window.shouldRetryWithBackup(errorMsg)) {
+            console.log('首选Key失败，尝试备用Key...', errorMsg);
+            setStatus('首选Key不可用，正在尝试备用Key...');
+            return await doRequest(backupKey);
+          }
+          throw error;
+        }
+      };
+
+      const renderImageOutputs = (candidates = []) => {
+        const images = [];
+        candidates.forEach((candidate) => {
+          candidate.content?.parts?.forEach((part) => {
+            const inlineData = part.inline_data ?? (part.inlineData ? { mime_type: part.inlineData.mimeType, data: part.inlineData.data } : null);
+            if (inlineData?.mime_type && inlineData?.data) {
+              images.push({ mimeType: inlineData.mime_type, data: inlineData.data });
+            }
+          });
+        });
+        if (images.length === 0) {
+          imageOutput.innerHTML = "";
+          outputSection.hidden = true;
+          return images;
+        }
+        outputSection.hidden = false;
+        imageOutput.innerHTML = images.map(({ mimeType, data }) => {
+          const src = `data:${mimeType};base64,${data}`;
+          return `<figure><img src="${src}" alt="生成图像" /><figcaption>${mimeType}</figcaption></figure>`;
+        }).join("");
+        return images;
+      };
+
+      // 主提交
+      submitBtn.addEventListener("click", async () => {
+        try {
+          toggleLoading(true);
+          imageOutput.innerHTML = "";
+          setStatus('', '');
+
+          const credential = credentialInput.value.trim();
+          if (!credential) {
+            setStatus("请粘贴访问凭证。", 'error');
+            toggleLoading(false);
+            return;
+          }
+
+          let prompt = promptInput.value.trim();
+          if (!prompt) {
+            setStatus("请输入提示词。", 'error');
+            toggleLoading(false);
+            return;
+          }
+
+          // 检查是否至少上传了一张图片
+          const hasImage = Object.values(imageSlots).some(slot => slot !== null);
+          if (!hasImage) {
+            setStatus("请至少上传一张参考图片。", 'error');
+            toggleLoading(false);
+            return;
+          }
+
+          // 如果启用了提示词优化，先优化提示词
+          if (optimizeToggle && optimizeToggle.checked) {
+            setStatus("正在分析图片，优化提示词中...");
+            try {
+              const optimizedPrompt = await optimizePromptForImages(imageSlots, credential);
+              if (optimizedPrompt) {
+                prompt = optimizedPrompt;
+                console.log("优化后的提示词:", prompt);
+              }
+            } catch (optError) {
+              console.warn("提示词优化失败，使用原始提示词:", optError);
+              setStatus("提示词优化失败，使用原始提示词继续...", 'warning');
+              await new Promise(r => setTimeout(r, 1000));
+            }
+          }
+
+          setStatus("正在生成图片...");
+
+          const body = await buildRequestBody(prompt);
+          const { json } = await executeRequest(body, credential);
+          const candidates = json.candidates || [];
+          const images = renderImageOutputs(candidates);
+          
+          await recordTask({ prompt, images: images || [] });
+          setStatus("生成完成！", 'success');
+        } catch (error) {
+          console.error(error);
+          setStatus(`请求异常：${error.message}`, 'error');
+        } finally {
+          toggleLoading(false);
+        }
+      });
+
+      // 页面加载时恢复缓存状态
+      (async function restoreCachedState() {
+        isRestoring = true;
+        
+        try {
+          const [cachedApiKey, cachedPrompt, cachedAspectRatio, cachedResolution, cachedHistory] = await Promise.all([
+            pageCache.get('apiKey'),
+            pageCache.get('prompt'),
+            pageCache.get('aspectRatio'),
+            pageCache.get('resolution'),
+            pageCache.get('taskHistory')
+          ]);
+          
+          if (cachedApiKey && credentialInput) {
+            credentialInput.value = cachedApiKey;
+          }
+          
+          if (cachedPrompt && promptInput) {
+            promptInput.value = cachedPrompt;
+          }
+          
+          if (cachedAspectRatio) {
+            aspectRatioInput.value = cachedAspectRatio;
+            ratioBtns.forEach(btn => {
+              btn.classList.toggle('active', btn.dataset.ratio === cachedAspectRatio);
+            });
+          }
+          
+          if (cachedResolution && resolutionSelect) {
+            resolutionSelect.value = cachedResolution;
+          }
+          
+          isRestoring = false;
+          
+          setTimeout(() => {
+            if (cachedHistory && Array.isArray(cachedHistory)) {
+              taskHistory = restoreHistoryFromStorage(cachedHistory);
+              taskHistory = taskHistory.slice(0, MAX_HISTORY_ENTRIES);
+              renderHistory();
+            }
+          }, 100);
+          
+        } catch (error) {
+          console.error('恢复缓存状态失败:', error);
+          isRestoring = false;
+        }
+      })();
+
+      // 页面卸载时清理资源
+      window.addEventListener('beforeunload', () => {
+        Object.values(previewUrls).forEach(url => {
+          if (url) URL.revokeObjectURL(url);
+        });
+      });
+
+      // 初始化
+      initUploadSlots();
+      renderHistory();
+    </script>
+</body>
+</html>

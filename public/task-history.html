@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>任务历史 - 肯葳科技 AIGC 平台</title>
+  <link rel="stylesheet" href="styles/workspace.css" />
+  <link rel="stylesheet" href="styles/mobile.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+      color: #1e293b;
+    }
+
+    /* 顶部导航（在 index iframe 模式会被 shell 注入样式隐藏） */
+    .top-header {
+      background: #fff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 56px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #f8f9fb;
+      border: 1px solid #e8ecf1;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #475569;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .header-btn:hover { background: #f0f2f5; border-color: #d1d5db; }
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .main-content {
+      margin-top: 72px;
+      padding: 24px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .toolbar-left { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #e8ecf1;
+      background: #fff;
+      font-size: 12px;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pill:hover { border-color: #cbd5e1; }
+    .pill.active { background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%); border-color: transparent; color: #fff; }
+
+    .toolbar-right { display: flex; gap: 8px; align-items: center; }
+    .danger-btn {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      color: #dc2626;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .danger-btn:hover { background: #fee2e2; }
+
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e8ecf1;
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #e8ecf1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .panel-sub { font-size: 12px; color: #64748b; }
+
+    .list { display: flex; flex-direction: column; }
+    .item {
+      padding: 14px 16px;
+      border-bottom: 1px solid #eef2f7;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .item:last-child { border-bottom: none; }
+    .item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .item-meta { font-size: 12px; color: #64748b; line-height: 1.6; }
+    .badge {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .badge.pending { background: #fef3c7; color: #92400e; }
+    .badge.completed { background: #d1fae5; color: #065f46; }
+    .badge.failed { background: #fee2e2; color: #991b1b; }
+    .tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 11px;
+      border: 1px solid #dbeafe;
+    }
+
+    .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .action-btn {
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid #e8ecf1;
+      background: #fff;
+      color: #334155;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .action-btn:hover { border-color: #cbd5e1; }
+    .action-btn.danger { border-color: #fecaca; color: #dc2626; background: #fff; }
+    .action-btn.danger:hover { background: #fef2f2; }
+    .action-btn.primary { border-color: #bfdbfe; color: #2563eb; }
+
+    .empty {
+      padding: 56px 18px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+    .empty b { color: #1e293b; }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.info { background: #eff6ff; color: #1d4ed8; }
+    .status.success { background: #ecfdf5; color: #047857; }
+    .status.error { background: #fef2f2; color: #b91c1c; }
+
+    @media (max-width: 768px) {
+      .main-content { padding: 16px; }
+      .item { grid-template-columns: 1fr; }
+      .actions { justify-content: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="top-header">
+    <div class="header-left">
+      <div class="page-title">🕐 任务历史</div>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" id="refreshBtn">🔄 刷新</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="toolbar">
+      <div class="toolbar-left" id="filterBar"></div>
+      <div class="toolbar-right">
+        <button class="danger-btn" id="clearAllBtn">🧹 清空全部历史</button>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">历史任务列表</div>
+          <div class="panel-sub" id="summaryText">加载中...</div>
+        </div>
+      </div>
+      <div class="list" id="taskList"></div>
+      <div class="empty" id="emptyState" style="display:none;">暂无历史记录。<br/>提示：先去某个功能页生成一次任务后再回来查看。</div>
+    </section>
+
+    <div class="status" id="status"></div>
+  </main>
+
+  <script src="scripts/duu-db.js"></script>
+  <script>
+    // ------------------------------
+    // Task history aggregator
+    // - History store (IndexedDB task_history) : HistoryDB.getTasks(pageKey)
+    // - Cache store (IndexedDB cache)          : DuuDB.getCache('<ns>:taskHistory')
+    // ------------------------------
+
+    const FILTERS = [
+      { id: 'all', label: '全部' },
+      { id: 'gemini', label: 'Gemini' },
+      { id: 'sora', label: 'Sora' },
+      { id: 'veo', label: 'VEO' },
+      { id: 'kling', label: 'Kling' }
+    ];
+
+    const SOURCES = [
+      // History store sources
+      { kind: 'history', group: 'gemini', label: 'Gemini·提取印花', pageKey: 'gemini-extract' },
+      { kind: 'history', group: 'gemini', label: 'Gemini·自定义', pageKey: 'gemini-custom' },
+      { kind: 'history', group: 'kling',  label: 'Kling·文生视频', pageKey: 'kling-text2video' },
+      { kind: 'history', group: 'kling',  label: 'Kling·图生视频', pageKey: 'kling-image2video' },
+
+      // Cache store sources
+      { kind: 'cache', group: 'gemini', label: 'Gemini·四图参考', cacheKey: 'gemini-four-ref:taskHistory' },
+      { kind: 'cache', group: 'gemini', label: 'Gemini·十图参考', cacheKey: 'gemini-ten-ref:taskHistory' },
+
+      { kind: 'cache', group: 'sora', label: 'Sora·文生视频', cacheKey: 'sora-wssp:taskHistory' },
+      { kind: 'cache', group: 'sora', label: 'Sora·图生视频', cacheKey: 'sora-tssp:taskHistory' },
+      { kind: 'cache', group: 'sora', label: 'Sora·批量图生', cacheKey: 'sora-batch:taskHistory' },
+
+      { kind: 'cache', group: 'veo', label: 'VEO·文生视频', cacheKey: 'veo-wssp:taskHistory' },
+      { kind: 'cache', group: 'veo', label: 'VEO·图生视频', cacheKey: 'veo-tssp:taskHistory' },
+      { kind: 'cache', group: 'veo', label: 'VEO·首尾帧', cacheKey: 'veo-swz:taskHistory' },
+      { kind: 'cache', group: 'veo', label: 'VEO·样本自定义', cacheKey: 'veo-ybzdy:taskHistory' }
+    ];
+
+    const els = {
+      filterBar: document.getElementById('filterBar'),
+      list: document.getElementById('taskList'),
+      empty: document.getElementById('emptyState'),
+      summary: document.getElementById('summaryText'),
+      status: document.getElementById('status'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      clearAllBtn: document.getElementById('clearAllBtn')
+    };
+
+    let activeFilter = 'all';
+    let allTasks = [];
+
+    function showStatus(msg, type = 'info') {
+      els.status.textContent = msg;
+      els.status.className = 'status show ' + type;
+      if (type !== 'info') setTimeout(() => els.status.classList.remove('show'), 4500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function fmtTime(ts) {
+      const d = new Date(ts);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function normalizeStatus(raw) {
+      const s = (raw || '').toLowerCase();
+      if (s.includes('pending') || s.includes('processing') || s.includes('running')) return 'pending';
+      if (s.includes('fail') || s.includes('error')) return 'failed';
+      if (s.includes('complete') || s.includes('success') || s.includes('done')) return 'completed';
+      return raw ? raw : 'pending';
+    }
+
+    function normalizeTask(source, task) {
+      // Try to map different shapes to a common schema
+      const createdAt = task.createdAt || task.created_at || task.time || Date.now();
+      const prompt = task.prompt || task.title || task.description || task.text || '';
+      const status = normalizeStatus(task.status || task.state);
+      const videoUrl = task.videoUrl || task.video_url || task.url || task.result?.url || null;
+      const images = task.images || task.outputs || [];
+
+      return {
+        _source: source,
+        _kind: source.kind,
+        _group: source.group,
+        _label: source.label,
+        _id: task.id || task.taskId || task.task_id || task._id || `${source.label}-${createdAt}`,
+        createdAt,
+        prompt,
+        status,
+        model: task.model || task.model_id || '',
+        fileName: task.fileName || task.filename || '',
+        videoUrl,
+        images
+      };
+    }
+
+    async function loadSource(source) {
+      if (source.kind === 'history') {
+        const arr = await HistoryDB.getTasks(source.pageKey);
+        return (arr || []).map(t => normalizeTask(source, t));
+      }
+      // cache
+      const arr = await DuuDB.getCache(source.cacheKey, []);
+      if (!Array.isArray(arr)) return [];
+      return arr.map(t => normalizeTask(source, t));
+    }
+
+    async function loadAllTasks() {
+      els.summary.textContent = '加载中...';
+      try {
+        await DuuDB.init();
+        const lists = await Promise.all(SOURCES.map(loadSource));
+        allTasks = lists.flat().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        render();
+        updateSummary();
+      } catch (e) {
+        console.error(e);
+        showStatus('加载历史失败：' + (e?.message || String(e)), 'error');
+        render();
+      }
+    }
+
+    function updateSummary() {
+      const total = allTasks.length;
+      const pending = allTasks.filter(t => t.status === 'pending').length;
+      const completed = allTasks.filter(t => t.status === 'completed').length;
+      const failed = allTasks.filter(t => t.status === 'failed').length;
+      els.summary.textContent = `共 ${total} 条 · 进行中 ${pending} · 已完成 ${completed} · 失败 ${failed}`;
+    }
+
+    function getFilteredTasks() {
+      if (activeFilter === 'all') return allTasks;
+      return allTasks.filter(t => t._group === activeFilter);
+    }
+
+    function render() {
+      const tasks = getFilteredTasks();
+      els.list.innerHTML = '';
+      els.empty.style.display = tasks.length === 0 ? 'block' : 'none';
+      if (tasks.length === 0) return;
+
+      const frag = document.createDocumentFragment();
+      tasks.forEach((t) => {
+        const el = document.createElement('div');
+        el.className = 'item';
+
+        const title = escapeHtml(t.prompt || t.fileName || '(无提示词)');
+        const short = title.length > 80 ? title.slice(0, 80) + '…' : title;
+        const badgeCls = t.status === 'completed' ? 'completed' : (t.status === 'failed' ? 'failed' : 'pending');
+        const modelText = t.model ? ` · ${escapeHtml(t.model)}` : '';
+        const fileText = t.fileName ? `<div>文件：${escapeHtml(t.fileName)}</div>` : '';
+
+        el.innerHTML = `
+          <div>
+            <div class="item-title">
+              <span class="tag">${escapeHtml(t._label)}</span>
+              <span>${short}</span>
+              <span class="badge ${badgeCls}">${badgeCls === 'completed' ? '已完成' : (badgeCls === 'failed' ? '失败' : '进行中')}</span>
+            </div>
+            <div class="item-meta">
+              <div>时间：${fmtTime(t.createdAt)}${modelText}</div>
+              ${fileText}
+            </div>
+          </div>
+          <div class="actions">
+            ${t.videoUrl ? `<button class="action-btn primary" data-action="open" data-id="${escapeHtml(t._id)}">打开结果</button>` : ''}
+            <button class="action-btn" data-action="goto" data-id="${escapeHtml(t._id)}">打开功能页</button>
+            <button class="action-btn danger" data-action="delete" data-id="${escapeHtml(t._id)}">删除</button>
+          </div>
+        `;
+        frag.appendChild(el);
+      });
+      els.list.appendChild(frag);
+    }
+
+    async function deleteTask(taskId) {
+      const t = allTasks.find(x => String(x._id) === String(taskId));
+      if (!t) return;
+
+      try {
+        if (t._kind === 'history') {
+          await HistoryDB.deleteTask(t._id);
+        } else {
+          // cache: remove from the cached array
+          const cacheKey = t._source.cacheKey;
+          const arr = await DuuDB.getCache(cacheKey, []);
+          const next = Array.isArray(arr) ? arr.filter(x => String(x.id || x.taskId || x.task_id || x._id) !== String(t._id)) : [];
+          await DuuDB.setCache(cacheKey, next, null);
+        }
+
+        showStatus('已删除一条记录', 'success');
+        await loadAllTasks();
+      } catch (e) {
+        console.error(e);
+        showStatus('删除失败：' + (e?.message || String(e)), 'error');
+      }
+    }
+
+    async function clearAll() {
+      if (!confirm('确定要清空全部历史记录吗？此操作不可恢复。')) return;
+      try {
+        // Clear history store tasks we know
+        await Promise.all([
+          HistoryDB.getTasks('gemini-extract').then(list => Promise.all((list||[]).map(t => HistoryDB.deleteTask(t.id)))),
+          HistoryDB.getTasks('gemini-custom').then(list => Promise.all((list||[]).map(t => HistoryDB.deleteTask(t.id)))),
+          HistoryDB.getTasks('kling-text2video').then(list => Promise.all((list||[]).map(t => HistoryDB.deleteTask(t.id)))),
+          HistoryDB.getTasks('kling-image2video').then(list => Promise.all((list||[]).map(t => HistoryDB.deleteTask(t.id))))
+        ]);
+
+        // Clear cache histories
+        const cacheKeys = SOURCES.filter(s => s.kind === 'cache').map(s => s.cacheKey);
+        await Promise.all(cacheKeys.map(k => DuuDB.setCache(k, [], null)));
+
+        showStatus('已清空全部历史', 'success');
+        await loadAllTasks();
+      } catch (e) {
+        console.error(e);
+        showStatus('清空失败：' + (e?.message || String(e)), 'error');
+      }
+    }
+
+    function buildFilters() {
+      els.filterBar.innerHTML = '';
+      FILTERS.forEach(f => {
+        const btn = document.createElement('button');
+        btn.className = 'pill' + (f.id === activeFilter ? ' active' : '');
+        btn.textContent = f.label;
+        btn.addEventListener('click', () => {
+          activeFilter = f.id;
+          document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          render();
+          updateSummary();
+        });
+        els.filterBar.appendChild(btn);
+      });
+    }
+
+    function getToolUrlForSource(source) {
+      // Map source label -> the actual tool page (same as sidebar)
+      const map = {
+        'Gemini·提取印花': 'gemini/tiqu-yinhua.html',
+        'Gemini·四图参考': 'gemini/situcankao.html',
+        'Gemini·十图参考': 'gemini/shitucankao.html',
+        'Gemini·自定义': 'gemini/zidingyi.html',
+        'Sora·文生视频': 'sora/sorawssp.html',
+        'Sora·图生视频': 'sora/sorotssp.html',
+        'Sora·批量图生': 'sora/piliang-tssp.html',
+        'VEO·文生视频': 'veo/veowssp.html',
+        'VEO·图生视频': 'veo/veotssp.html',
+        'VEO·首尾帧': 'veo/veoswz.html',
+        'VEO·样本自定义': 'veo/veoybzdy.html',
+        'Kling·文生视频': 'kling-video/klwssp.html',
+        'Kling·图生视频': 'kling-video/kltssp.html'
+      };
+      return map[source.label] || 'index.html';
+    }
+
+    // Event delegation
+    els.list.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const action = btn.getAttribute('data-action');
+      const id = btn.getAttribute('data-id');
+      const t = allTasks.find(x => String(x._id) === String(id));
+      if (!t) return;
+
+      if (action === 'open') {
+        const url = t.videoUrl;
+        if (!url) return;
+        window.open(url, '_blank');
+      } else if (action === 'goto') {
+        const toolUrl = getToolUrlForSource(t._source);
+        window.open(toolUrl, '_blank');
+      } else if (action === 'delete') {
+        if (!confirm('确定删除这条记录吗？')) return;
+        await deleteTask(id);
+      }
+    });
+
+    els.refreshBtn.addEventListener('click', loadAllTasks);
+    els.clearAllBtn.addEventListener('click', clearAll);
+
+    // Init
+    buildFilters();
+    loadAllTasks();
+  </script>
+</body>
+</html>

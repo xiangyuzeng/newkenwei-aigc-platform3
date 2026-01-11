@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的用量</title>
+    <link rel="stylesheet" href="styles/workspace.css">
+    <link rel="stylesheet" href="styles/mobile.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f7fa; min-height: 100vh; color: #1e293b; }
+
+        .top-header { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .header-btn:hover { background: #f0f2f5; border-color: #d1d5db; }
+        .page-title { font-size: 20px; font-weight: 600; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+        .main-content { margin-top: 72px; padding: 24px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+
+        .api-key-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e8ecf1; }
+        .api-key-input-group { display: flex; gap: 12px; }
+        .api-key-input { flex: 1; padding: 12px 16px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 14px; }
+        .api-key-input:focus { outline: none; border-color: #6366f1; }
+        .query-btn { padding: 12px 24px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .query-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .query-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; }
+        .stat-label { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 600; color: #1e293b; }
+        .stat-value.balance { color: #10b981; }
+        .stat-value.used { color: #f59e0b; }
+        .stat-unit { font-size: 14px; font-weight: 400; color: #64748b; margin-left: 4px; }
+
+        .log-section { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 16px; font-weight: 600; color: #1e293b; }
+        .refresh-btn { padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 6px; font-size: 13px; color: #475569; cursor: pointer; }
+        .refresh-btn:hover { background: #f0f2f5; }
+
+        .log-table { width: 100%; border-collapse: collapse; }
+        .log-table th, .log-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e8ecf1; }
+        .log-table th { font-size: 13px; font-weight: 500; color: #64748b; background: #f8f9fb; }
+        .log-table td { font-size: 13px; color: #1e293b; }
+        .log-table tr:hover { background: #f8f9fb; }
+        .model-tag { display: inline-block; padding: 2px 8px; background: #e0e7ff; color: #4f46e5; border-radius: 4px; font-size: 12px; }
+        .cost-cell { font-weight: 500; color: #f59e0b; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+        .loading { text-align: center; padding: 40px; color: #64748b; }
+        .loading::after { content: ''; display: inline-block; width: 20px; height: 20px; border: 2px solid #e8ecf1; border-top-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg { background: #fef2f2; color: #dc2626; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+        .success-msg { background: #ecfdf5; color: #059669; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+
+        .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+        .page-btn { padding: 8px 12px; border: 1px solid #e8ecf1; background: #fff; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .page-btn:hover { background: #f8f9fb; }
+        .page-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .helper { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <header class="top-header">
+        <div class="header-left">
+        </div>
+        <span class="page-title">我的用量</span>
+        <div></div>
+    </header>
+
+    <main class="main-content">
+        <div class="api-key-section">
+            <div class="api-key-input-group">
+                <input type="password" id="apiKeyInput" class="api-key-input" placeholder="输入你的 API Key 查询用量">
+                <button id="queryBtn" class="query-btn">查询</button>
+            </div>
+            <p class="helper">输入 API Key 后点击查询，即可查看余额和调用明细</p>
+        </div>
+
+        <div id="errorMsg" class="error-msg" style="display: none;"></div>
+        <div id="successMsg" class="success-msg" style="display: none;"></div>
+
+        <div id="statsSection" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">当前余额</div>
+                    <div class="stat-value balance" id="balanceValue">-<span class="stat-unit">元</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">已用额度</div>
+                    <div class="stat-value used" id="usedValue">-<span class="stat-unit">元</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">总请求次数</div>
+                    <div class="stat-value" id="requestCount">-<span class="stat-unit">次</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">今日请求</div>
+                    <div class="stat-value" id="todayCount">-<span class="stat-unit">次</span></div>
+                </div>
+            </div>
+
+            <div class="log-section">
+                <div class="section-header">
+                    <span class="section-title">调用明细</span>
+                    <button id="refreshBtn" class="refresh-btn">🔄 刷新</button>
+                </div>
+                <div id="logContent">
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <div>暂无调用记录</div>
+                    </div>
+                </div>
+                <div id="pagination" class="pagination" style="display: none;"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 使用自己服务器的代理接口，不暴露上游地址
+        const API_BASE = '';
+        
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const queryBtn = document.getElementById('queryBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const statsSection = document.getElementById('statsSection');
+        const logContent = document.getElementById('logContent');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const pagination = document.getElementById('pagination');
+
+        let currentPage = 1;
+        const pageSize = 20;
+        let currentApiKey = '';
+
+        // 从缓存恢复 API Key
+        const cachedKey = localStorage.getItem('duu_usage_apikey');
+        if (cachedKey) {
+            apiKeyInput.value = cachedKey;
+        }
+
+        // 显示错误
+        const showError = (msg) => {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+            successMsg.style.display = 'none';
+            setTimeout(() => { errorMsg.style.display = 'none'; }, 5000);
+        };
+
+        // 显示成功
+        const showSuccess = (msg) => {
+            successMsg.textContent = msg;
+            successMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+            setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
+        };
+
+        // KIE credits are not quota; display raw credit values.
+        const formatCredit = (value) => {
+            if (value === null || value === undefined) return '-';
+            const n = Number(value);
+            if (Number.isNaN(n)) return String(value);
+            return n.toLocaleString('zh-CN', { maximumFractionDigits: 4 });
+        };
+
+        // 格式化时间
+        const formatTime = (timestamp) => {
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+
+        // 查询用户信息（通过 API Key）
+        const queryUserInfo = async (apiKey) => {
+            const response = await fetch(`${API_BASE}/api/proxy/token/info`, {
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            });
+            if (!response.ok) {
+                throw new Error('API Key 无效或已过期');
+            }
+            return response.json();
+        };
+
+        // 查询调用日志
+        const queryLogs = async (apiKey, page = 1) => {
+            const response = await fetch(`${API_BASE}/api/proxy/log/self?p=${page - 1}&size=${pageSize}`, {
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            });
+            if (!response.ok) {
+                throw new Error('获取日志失败');
+            }
+            return response.json();
+        };
+
+        // 渲染日志表格
+        const renderLogs = (logs, total) => {
+            if (!logs || logs.length === 0) {
+                logContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <div>暂无调用记录</div>
+                    </div>
+                `;
+                pagination.style.display = 'none';
+                return;
+            }
+
+            let html = `
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>模型</th>
+                            <th>提示词</th>
+                            <th>生成数量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            logs.forEach(log => {
+                const promptShort = (log.prompt || '无').length > 30 
+                    ? log.prompt.substring(0, 30) + '...' 
+                    : (log.prompt || '无');
+                html += `
+                    <tr>
+                        <td>${formatTime(log.created_at)}</td>
+                        <td><span class="model-tag">${log.model_name || log.model || 'gemini'}</span></td>
+                        <td title="${(log.prompt || '').replace(/"/g, '&quot;')}">${promptShort}</td>
+                        <td>${log.image_count || 1} 张</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            logContent.innerHTML = html;
+
+            // 渲染分页
+            const totalPages = Math.ceil(total / pageSize);
+            if (totalPages > 1) {
+                let pageHtml = '';
+                pageHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">上一页</button>`;
+                
+                for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                    pageHtml += `<button class="page-btn ${currentPage === i ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                }
+                
+                if (totalPages > 5) {
+                    pageHtml += `<span style="padding: 8px;">...</span>`;
+                    pageHtml += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+                }
+                
+                pageHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">下一页</button>`;
+                
+                pagination.innerHTML = pageHtml;
+                pagination.style.display = 'flex';
+            } else {
+                pagination.style.display = 'none';
+            }
+        };
+
+        // 跳转页面
+        window.goToPage = async (page) => {
+            if (page < 1 || !currentApiKey) return;
+            currentPage = page;
+            
+            logContent.innerHTML = '<div class="loading">加载中</div>';
+            
+            try {
+                const logData = await queryLogs(currentApiKey, page);
+                renderLogs(logData.data, logData.total || 0);
+            } catch (e) {
+                showError(e.message);
+            }
+        };
+
+        // 主查询函数
+        const doQuery = async () => {
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                showError('请输入 API Key');
+                return;
+            }
+
+            queryBtn.disabled = true;
+            queryBtn.textContent = '查询中...';
+            currentApiKey = apiKey;
+            currentPage = 1;
+
+            try {
+                // 保存到缓存
+                localStorage.setItem('duu_usage_apikey', apiKey);
+
+                // 查询用户信息
+                const userInfo = await queryUserInfo(apiKey);
+                
+                if (!userInfo.success) {
+                    throw new Error(userInfo.message || 'API Key 无效');
+                }
+
+                const user = userInfo.data;
+                
+                // 更新统计卡片（KIE credits）
+                const credit = user.credit ?? user.credits ?? user.balance ?? user.quota;
+                const used = user.used ?? user.usedCredit ?? user.used_credits ?? user.used_quota;
+                document.getElementById('balanceValue').innerHTML = `${formatCredit(credit)}<span class="stat-unit">credits</span>`;
+                document.getElementById('usedValue').innerHTML = `${formatCredit(used)}<span class="stat-unit">credits</span>`;
+                
+                // 查询日志（从小助手本地数据库）
+                const logData = await queryLogs(apiKey, 1);
+                
+                // 请求次数从本地日志获取
+                document.getElementById('requestCount').innerHTML = `${logData.total || 0}<span class="stat-unit">次</span>`;
+                
+                // 计算今日请求数
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayTimestamp = Math.floor(today.getTime() / 1000);
+                const todayLogs = (logData.data || []).filter(log => log.created_at >= todayTimestamp);
+                document.getElementById('todayCount').innerHTML = `${todayLogs.length}<span class="stat-unit">次</span>`;
+
+                renderLogs(logData.data, logData.total || 0);
+                
+                statsSection.style.display = 'block';
+                showSuccess('查询成功');
+
+            } catch (e) {
+                showError(e.message);
+                statsSection.style.display = 'none';
+            } finally {
+                queryBtn.disabled = false;
+                queryBtn.textContent = '查询';
+            }
+        };
+
+        // 绑定事件
+        queryBtn.addEventListener('click', doQuery);
+        apiKeyInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') doQuery();
+        });
+        refreshBtn.addEventListener('click', () => goToPage(currentPage));
+
+        // 如果有缓存的 Key，自动查询
+        if (cachedKey) {
+            doQuery();
+        }
+    </script>
+</body>
+</html>

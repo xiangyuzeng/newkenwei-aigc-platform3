@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VEO文生视频</title>
+    <link rel="stylesheet" href="../styles/workspace.css">
+    <link rel="stylesheet" href="../styles/mobile.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f5f7fa; min-height: 100vh; color: #1e293b; }
+
+        .top-header { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .header-btn:hover { background: #f0f2f5; border-color: #d1d5db; }
+        .page-title { font-size: 20px; font-weight: 600; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e8ecf1; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #64748b; }
+
+        .tab-nav { background: #fff; padding: 0 24px; border-bottom: 1px solid #e8ecf1; position: fixed; top: 56px; left: 0; right: 0; z-index: 99; height: 48px; display: flex; align-items: center; gap: 8px; }
+        .tab-item { padding: 8px 20px; font-size: 14px; color: #64748b; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .tab-item:hover { background: #f5f7fa; color: #475569; }
+        .tab-item.active { background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: #fff; font-weight: 500; }
+
+        .main-content { margin-top: 104px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin-left: auto; margin-right: auto; }
+        .left-panel, .right-panel { display: flex; flex-direction: column; gap: 20px; }
+        .panel-section { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid #e8ecf1; }
+        .section-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        .credential-input { width: 100%; padding: 10px 14px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fafbfc; }
+        .credential-input:focus { outline: none; border-color: #3b82f6; background: #fff; }
+        .helper { font-size: 12px; color: #94a3b8; margin-top: 8px; line-height: 1.5; }
+
+        .prompt-wrapper { position: relative; }
+        .prompt-textarea { width: 100%; min-height: 120px; padding: 12px 14px; padding-right: 90px; border: 1px solid #e8ecf1; border-radius: 8px; font-size: 13px; background: #fafbfc; resize: vertical; font-family: inherit; }
+        .prompt-textarea:focus { outline: none; border-color: #3b82f6; background: #fff; }
+        .optimize-btn { position: absolute; right: 8px; top: 8px; padding: 6px 12px; background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); color: #fff; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s; }
+        .optimize-btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); }
+        .optimize-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .optimize-btn.loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes redBlink { 0%, 100% { color: #ef4444; } 50% { color: #fca5a5; } }
+        .red-blink { color: #ef4444; animation: redBlink 1s infinite; }
+
+        .prompt-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .prompt-example { padding: 6px 12px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 16px; font-size: 12px; color: #2563eb; cursor: pointer; transition: all 0.2s; }
+        .prompt-example:hover { background: #dbeafe; }
+
+        .param-label { font-size: 13px; color: #475569; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .param-btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .param-btn { padding: 10px 20px; border: 1px solid #e8ecf1; border-radius: 20px; font-size: 13px; color: #475569; background: #fff; cursor: pointer; transition: all 0.2s; }
+        .param-btn:hover { border-color: #3b82f6; background: #eff6ff; }
+        .param-btn.active { background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: #fff; border-color: transparent; }
+        .param-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; }
+        .param-btn:disabled:hover { background: #f1f5f9; border-color: #e2e8f0; }
+
+        .info-box { display: flex; align-items: flex-start; gap: 8px; padding: 12px 14px; background: #eff6ff; border-radius: 8px; font-size: 12px; color: #1d4ed8; line-height: 1.6; margin-top: 16px; }
+
+        .submit-btn { width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+        .status:empty { display: none; }
+        .status.success { background: #ecfdf5; color: #059669; }
+        .status.error { background: #fef2f2; color: #dc2626; }
+        .status.info { background: #eff6ff; color: #2563eb; }
+
+        .task-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .task-desc { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+        .task-list { display: flex; flex-direction: column; gap: 12px; max-height: 600px; overflow-y: auto; }
+        .history-empty { text-align: center; color: #94a3b8; font-size: 13px; padding: 40px 20px; }
+
+        .history-item { background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 10px; padding: 16px; }
+        .history-item header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .history-meta { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #64748b; }
+        .history-meta strong { color: #1e293b; font-size: 13px; display: block; margin-bottom: 4px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .history-status { padding: 4px 10px; border-radius: 12px; font-size: 12px; white-space: nowrap; }
+        .history-status.pending { background: #fef3c7; color: #92400e; }
+        .history-status.completed { background: #d1fae5; color: #065f46; }
+        .history-status.failed { background: #fee2e2; color: #991b1b; }
+        .history-video { margin-top: 12px; }
+        .history-video video { width: 100%; max-height: 200px; border-radius: 8px; background: #000; }
+        .history-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .history-actions button { padding: 6px 12px; background: #fff; border: 1px solid #e8ecf1; border-radius: 6px; font-size: 12px; color: #475569; cursor: pointer; transition: all 0.2s; }
+        .history-actions button:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; }
+        .history-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .history-actions button.delete-btn { color: #ef4444; }
+        .history-actions button.delete-btn:hover:not(:disabled) { border-color: #ef4444; background: #fef2f2; }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .tab-nav { overflow-x: auto; padding: 0 16px; } .main-content { padding: 16px; } }
+    </style>
+</head>
+<body>
+    <header class="top-header">
+        <div class="header-left">
+        </div>
+        <span class="page-title">VEO文生视频</span>
+        <div class="header-right">
+            <button class="header-icon-btn" onclick="location.reload()">🔄</button>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <a href="veowssp.html" class="tab-item active">文生视频</a>
+        <a href="veotssp.html" class="tab-item">图生视频</a>
+        <a href="veoswz.html" class="tab-item">首尾帧</a>
+        <a href="veoybzdy.html" class="tab-item">样本自定义</a>
+    </nav>
+
+    <main class="main-content">
+        <div class="left-panel">
+            <div class="panel-section">
+                <h2 class="section-title">🔑 APIKey填写区</h2>
+                <div style="margin-bottom: 12px;">
+                    <label class="helper" style="margin-bottom: 6px; display: block;">VEO APIKey<span class="red-blink">（推荐分组限时特价分组、default分组、纯AZ分组）</span></label>
+                    <input type="password" id="credential" class="credential-input" placeholder="粘贴VEO访问凭证" autocomplete="off">
+                </div>
+                <div>
+                    <label class="helper" style="margin-bottom: 6px; display: block;">Gemini APIKey<span class="red-blink">（推荐分组限时特价分组、优质gemini分组、官转gemini分组）</span></label>
+                    <input type="password" id="geminiKey" class="credential-input" placeholder="粘贴Gemini访问凭证" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">✏️ 提示词</h2>
+                <div class="prompt-wrapper">
+                    <textarea id="promptInput" class="prompt-textarea" placeholder="详细描述你想要生成的视频内容，例如：一只金毛犬在海边奔跑，阳光明媚，海浪轻拍沙滩..."></textarea>
+                    <button type="button" class="optimize-btn" id="optimizeBtn" title="AI智能润色提示词">✨ AI润色</button>
+                </div>
+                <p class="helper">点击「AI润色」可智能优化提示词，生成更专业的视频描述</p>
+                <div class="prompt-examples">
+                    <span class="prompt-example" onclick="setPrompt('一只猫咪在窗台上晒太阳，慵懒地打哈欠')">🐱 猫咪晒太阳</span>
+                    <span class="prompt-example" onclick="setPrompt('城市夜景，霓虹灯闪烁，车流穿梭')">🌃 城市夜景</span>
+                    <span class="prompt-example" onclick="setPrompt('樱花树下，花瓣随风飘落，唯美浪漫')">🌸 樱花飘落</span>
+                    <span class="prompt-example" onclick="setPrompt('宇宙星空，银河璀璨，流星划过')">🌌 宇宙星空</span>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2 class="section-title">⚙️ 参数设置</h2>
+                <div style="margin-bottom: 20px;">
+                    <p class="param-label">🤖 模型选择</p>
+                    <div class="param-btn-group" id="modelGroup">
+                        <button type="button" class="param-btn active" data-value="veo_3_1">VEO 3.1</button>
+                        <button type="button" class="param-btn" data-value="veo_3_1-fast">VEO 3.1 Fast</button>
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <p class="param-label">📐 视频比例</p>
+                    <div class="param-btn-group" id="sizeGroup">
+                        <button type="button" class="param-btn active" data-value="16x9">16:9 横屏</button>
+                        <button type="button" class="param-btn" data-value="9x16">9:16 竖屏</button>
+                    </div>
+                </div>
+                <div>
+                    <p class="param-label">⏱️ 视频时长</p>
+                    <div class="param-btn-group" id="secondsGroup">
+                        <button type="button" class="param-btn" data-value="5">5秒</button>
+                        <button type="button" class="param-btn active" data-value="8">8秒</button>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span>⏰</span>
+                    <span>视频生成大约需要 3-5 分钟，请耐心等待</span>
+                </div>
+            </div>
+
+            <button type="button" class="submit-btn" id="submitBtn">🎬 生成视频</button>
+            <p id="status" class="status"></p>
+        </div>
+
+        <div class="right-panel">
+            <div class="panel-section" style="flex: 1;">
+                <div class="task-header">
+                    <h2 class="section-title" style="margin-bottom: 0;">📋 任务历史</h2>
+                    <button class="param-btn" onclick="clearHistory()" style="padding: 6px 12px; font-size: 12px;">清空</button>
+                </div>
+                <p class="task-desc">展示最近的视频生成任务</p>
+                <p id="historyEmpty" class="history-empty">暂无任务记录</p>
+                <div id="taskHistoryList" class="task-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../scripts/duu-db.js"></script>
+    <script src="../scripts/apikeys.js"></script>
+    <script src="../scripts/auth.js"></script>
+    <script src="../scripts/image-server.js"></script>
+    <script>
+        // VEO API 配置
+        const API_BASE = '';
+        const GEMINI_API = (apiKey) => `/v1beta/models/gemini-2.5-flash-lite-nothinking:generateContent?key=${encodeURIComponent(apiKey)}`;
+        
+        const pageCache = new CacheManager('veo-wssp');
+        
+        const credentialInput = document.getElementById('credential');
+        const geminiKeyInput = document.getElementById('geminiKey');
+        const promptInput = document.getElementById('promptInput');
+        const optimizeBtn = document.getElementById('optimizeBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusEl = document.getElementById('status');
+        const taskHistoryList = document.getElementById('taskHistoryList');
+        const historyEmpty = document.getElementById('historyEmpty');
+        const sizeGroup = document.getElementById('sizeGroup');
+        const secondsGroup = document.getElementById('secondsGroup');
+        const modelGroup = document.getElementById('modelGroup');
+
+        let selectedSize = '16x9';
+        let selectedSeconds = '8';
+        let selectedModel = 'veo_3_1';
+        let taskHistory = [];
+        let pollingIntervals = {};
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCachedState();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            credentialInput.addEventListener('input', debounce(async () => {
+                await pageCache.set('veoApiKey', credentialInput.value, { ttl: null });
+            }, 500));
+            geminiKeyInput.addEventListener('input', debounce(async () => {
+                await pageCache.set('geminiApiKey', geminiKeyInput.value, { ttl: null });
+            }, 500));
+
+            sizeGroup.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('param-btn')) {
+                    sizeGroup.querySelectorAll('.param-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedSize = e.target.dataset.value;
+                    await pageCache.set('selectedSize', selectedSize, { ttl: null });
+                }
+            });
+            secondsGroup.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('param-btn')) {
+                    secondsGroup.querySelectorAll('.param-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedSeconds = e.target.dataset.value;
+                    await pageCache.set('selectedSeconds', selectedSeconds, { ttl: null });
+                }
+            });
+            modelGroup.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('param-btn')) {
+                    modelGroup.querySelectorAll('.param-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedModel = e.target.dataset.value;
+                    await pageCache.set('selectedModel', selectedModel, { ttl: null });
+                }
+            });
+
+            optimizeBtn.addEventListener('click', handleOptimize);
+            submitBtn.addEventListener('click', handleSubmit);
+        }
+
+        async function loadCachedState() {
+            try {
+                const [veoKey, geminiKey, cachedHistory, cachedSize, cachedSeconds, cachedModel] = await Promise.all([
+                    pageCache.get('veoApiKey'),
+                    pageCache.get('geminiApiKey'),
+                    pageCache.get('taskHistory'),
+                    pageCache.get('selectedSize'),
+                    pageCache.get('selectedSeconds'),
+                    pageCache.get('selectedModel')
+                ]);
+                
+                if (veoKey) credentialInput.value = veoKey;
+                if (geminiKey) geminiKeyInput.value = geminiKey;
+                if (cachedHistory && Array.isArray(cachedHistory)) {
+                    taskHistory = cachedHistory;
+                    renderHistory();
+                }
+                if (cachedSize) {
+                    selectedSize = cachedSize;
+                    sizeGroup.querySelectorAll('.param-btn').forEach(b => b.classList.toggle('active', b.dataset.value === cachedSize));
+                }
+                if (cachedSeconds) {
+                    selectedSeconds = cachedSeconds;
+                    secondsGroup.querySelectorAll('.param-btn').forEach(b => b.classList.toggle('active', b.dataset.value === cachedSeconds));
+                }
+                if (cachedModel) {
+                    selectedModel = cachedModel;
+                    modelGroup.querySelectorAll('.param-btn').forEach(b => b.classList.toggle('active', b.dataset.value === cachedModel));
+                }
+                // 恢复轮询
+                const apiKey = credentialInput.value.trim();
+                if (apiKey) taskHistory.filter(t => t.status === 'pending').forEach(t => startPolling(t.id, apiKey));
+            } catch (e) { console.error('加载缓存失败:', e); }
+        }
+
+        function setPrompt(text) {
+            promptInput.value = text;
+            promptInput.focus();
+        }
+
+        async function handleOptimize() {
+            const geminiKey = geminiKeyInput.value.trim();
+            const userPrompt = promptInput.value.trim();
+            
+            if (!geminiKey) { setStatus('请先填写 Gemini APIKey', 'error'); return; }
+            if (!userPrompt) { setStatus('请先输入提示词内容', 'error'); return; }
+
+            optimizeBtn.disabled = true;
+            optimizeBtn.classList.add('loading');
+            optimizeBtn.textContent = '润色中...';
+            setStatus('AI正在优化提示词...', 'info');
+
+            try {
+                const systemPrompt = `你是VEO视频提示词优化专家。将用户描述优化为专业视频生成提示词。
+
+优化方向：
+1. 场景细节：环境、光线、天气、时间
+2. 动态描述：运动方式、速度、节奏
+3. 视觉风格：色调、质感、画面构图
+4. 镜头语言：镜头运动、景别、角度
+
+【重要】只回执优化后的提示词，禁止输出任何解释、前缀、后缀或额外文字。
+
+用户描述：${userPrompt}`;
+
+                const body = {
+                    contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
+                };
+
+                const response = await fetch(GEMINI_API(geminiKey), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) throw new Error(`API错误: ${response.status}`);
+                const result = await response.json();
+                const optimizedPrompt = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+                if (optimizedPrompt) {
+                    promptInput.value = optimizedPrompt;
+                    setStatus('提示词优化完成！', 'success');
+                } else {
+                    throw new Error('未获取到优化结果');
+                }
+            } catch (error) {
+                setStatus(`润色失败: ${error.message}`, 'error');
+            } finally {
+                optimizeBtn.disabled = false;
+                optimizeBtn.classList.remove('loading');
+                optimizeBtn.textContent = '✨ AI润色';
+            }
+        }
+
+        async function handleSubmit() {
+            const apiKey = credentialInput.value.trim();
+            const prompt = promptInput.value.trim();
+
+            if (!apiKey) { setStatus('请填写 VEO APIKey', 'error'); return; }
+            if (!prompt) { setStatus('请填写提示词', 'error'); return; }
+
+            submitBtn.disabled = true;
+            setStatus('正在提交任务...', 'info');
+
+            try {
+                const formData = new FormData();
+                formData.append('model', selectedModel);
+                formData.append('prompt', prompt);
+                formData.append('seconds', selectedSeconds);
+                formData.append('size', selectedSize);
+                formData.append('watermark', 'false');
+
+                const response = await fetch(`${API_BASE}/v1/videos`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || result.error || '请求失败');
+
+                const taskId = result.id || result.task_id || result.data?.id;
+                if (!taskId) throw new Error('未获取到任务ID');
+
+                const task = {
+                    id: taskId,
+                    prompt: prompt,
+                    size: selectedSize,
+                    seconds: selectedSeconds,
+                    model: selectedModel,
+                    status: 'pending',
+                    createdAt: Date.now(),
+                    videoUrl: null,
+                    videoId: null
+                };
+
+                taskHistory.unshift(task);
+                saveHistory();
+                renderHistory();
+                startPolling(taskId, apiKey);
+
+                setStatus('任务已提交，正在生成视频...', 'success');
+                promptInput.value = '';
+            } catch (error) {
+                setStatus(`提交失败: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        function startPolling(taskId, apiKey) {
+            if (pollingIntervals[taskId]) return;
+            
+            const poll = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/v1/videos/${taskId}`, {
+                        headers: { 
+                            'Authorization': `Bearer ${apiKey}`, 
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const result = await response.json();
+                    
+                    const task = taskHistory.find(t => t.id === taskId);
+                    if (!task) { clearInterval(pollingIntervals[taskId]); delete pollingIntervals[taskId]; return; }
+
+                    const status = result.status || result.data?.status;
+                    if (status === 'SUCCESS' || status === 'completed') {
+                        task.status = 'completed';
+                        task.videoId = result.video_id || result.data?.video_id;
+                        task.videoUrl = result.video_url || result.data?.video_url || `${API_BASE}/v1/videos/${task.videoId}/content`;
+                        clearInterval(pollingIntervals[taskId]);
+                        delete pollingIntervals[taskId];
+                        
+                        // 保存到云端（登录用户）
+                        if (task.videoUrl) {
+                            try {
+                                await ImageServer.saveGeneration(
+                                    credentialInput.value.trim(),
+                                    task.prompt,
+                                    [{ url: task.videoUrl }],
+                                    'veo-text2video',
+                                    'text'
+                                );
+                                console.log('视频已保存到云端');
+                            } catch (e) {
+                                console.warn('保存到云端失败:', e);
+                            }
+                        }
+                    } else if (status === 'FAILED' || status === 'failed') {
+                        task.status = 'failed';
+                        task.failReason = result.fail_reason || result.message || '生成失败';
+                        clearInterval(pollingIntervals[taskId]);
+                        delete pollingIntervals[taskId];
+                    } else {
+                        task.progress = result.progress || result.data?.progress;
+                    }
+                    saveHistory();
+                    renderHistory();
+                } catch (error) { console.error('轮询失败:', error); }
+            };
+
+            poll();
+            pollingIntervals[taskId] = setInterval(poll, 10000);
+        }
+
+        async function saveHistory() {
+            try { await pageCache.set('taskHistory', taskHistory.slice(0, 20), { ttl: null }); } catch (e) {}
+        }
+
+        function renderHistory() {
+            if (taskHistory.length === 0) {
+                historyEmpty.classList.remove('hidden');
+                taskHistoryList.innerHTML = '';
+                return;
+            }
+            historyEmpty.classList.add('hidden');
+            taskHistoryList.innerHTML = taskHistory.map(task => `
+                <div class="history-item" data-id="${task.id}">
+                    <header>
+                        <div class="history-meta">
+                            <strong title="${task.prompt}">${task.prompt}</strong>
+                            <span>${task.size} · ${task.seconds}秒 · ${formatTime(task.createdAt)}</span>
+                        </div>
+                        <span class="history-status ${task.status}">${getStatusText(task)}</span>
+                    </header>
+                    ${task.videoUrl ? `<div class="history-video"><video src="${task.videoUrl}" controls preload="metadata"></video></div>` : ''}
+                    <div class="history-actions">
+                        ${task.videoUrl ? `<button onclick="downloadVideo('${task.videoUrl}', '${task.id}')">下载</button>` : ''}
+                        <button class="delete-btn" onclick="deleteTask('${task.id}')">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusText(task) {
+            if (task.status === 'pending') return task.progress ? `生成中 ${task.progress}` : '生成中...';
+            if (task.status === 'completed') return '已完成';
+            if (task.status === 'failed') return '失败';
+            return task.status;
+        }
+
+        function downloadVideo(url, filename) {
+            const a = document.createElement('a');
+            a.href = url; a.download = `veo_${filename}.mp4`; a.target = '_blank';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        function deleteTask(id) {
+            if (!confirm('确定删除该任务？')) return;
+            taskHistory = taskHistory.filter(t => t.id !== id);
+            saveHistory(); renderHistory();
+        }
+
+        function clearHistory() {
+            if (!confirm('确定清空所有历史记录？')) return;
+            taskHistory = [];
+            saveHistory(); renderHistory();
+        }
+
+        function setStatus(message, type = '') {
+            statusEl.textContent = message;
+            statusEl.className = type ? `status ${type}` : 'status';
+        }
+
+        function formatTime(timestamp) {
+            const d = new Date(timestamp);
+            return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        }
+
+        function debounce(fn, delay) {
+            let timer;
+            return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+/* 移动端全局适配样式 */
+
+/* 基础移动端适配 */
+@media (max-width: 768px) {
+    /* 顶部导航 */
+    .top-header {
+        padding: 10px 12px !important;
+        height: auto !important;
+        min-height: 50px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .header-left {
+        gap: 8px !important;
+    }
+    
+    .header-btn {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+    
+    .page-title {
+        font-size: 16px !important;
+        text-align: center;
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .header-right {
+        gap: 6px !important;
+    }
+    
+    .header-icon-btn {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 14px !important;
+    }
+    
+    /* 标签导航 */
+    .tab-nav {
+        padding: 0 10px !important;
+        height: auto !important;
+        min-height: 44px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 4px !important;
+    }
+    
+    .tab-nav::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .tab-item {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    /* 主内容区 */
+    .main-content {
+        margin-top: 100px !important;
+        padding: 12px !important;
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    
+    /* 面板区块 */
+    .panel-section {
+        padding: 16px !important;
+        border-radius: 10px !important;
+    }
+    
+    .section-title {
+        font-size: 14px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    /* 输入框 */
+    .credential-input,
+    .prompt-textarea,
+    .model-select,
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    textarea,
+    select {
+        font-size: 16px !important; /* 防止iOS缩放 */
+        padding: 12px !important;
+    }
+    
+    .prompt-textarea {
+        min-height: 100px !important;
+        padding-right: 70px !important;
+    }
+    
+    /* AI润色按钮 */
+    .optimize-btn {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+        right: 6px !important;
+        top: 6px !important;
+    }
+    
+    /* 帮助文字 */
+    .helper {
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* 参数按钮组 */
+    .param-btn-group {
+        gap: 6px !important;
+    }
+    
+    .param-btn {
+        padding: 8px 14px !important;
+        font-size: 12px !important;
+        border-radius: 16px !important;
+    }
+    
+    .param-label {
+        font-size: 12px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    /* 比例按钮组 */
+    .ratio-btn-group {
+        gap: 6px !important;
+    }
+    
+    .ratio-btn {
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        border-radius: 16px !important;
+    }
+    
+    /* 提交按钮 */
+    .submit-btn {
+        padding: 14px 20px !important;
+        font-size: 14px !important;
+        border-radius: 10px !important;
+    }
+    
+    /* 表单操作 */
+    .form-actions {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    
+    .form-actions .submit-btn {
+        width: 100% !important;
+    }
+    
+    /* 状态提示 */
+    .status {
+        font-size: 12px !important;
+        padding: 10px 12px !important;
+    }
+    
+    /* 信息框 */
+    .info-box {
+        padding: 10px 12px !important;
+        font-size: 11px !important;
+    }
+    
+    /* 提示词示例 */
+    .prompt-examples {
+        gap: 6px !important;
+    }
+    
+    .prompt-example {
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+    }
+    
+    /* 上传区域 */
+    .upload-zone {
+        padding: 24px 16px !important;
+    }
+    
+    .upload-icon {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 20px !important;
+    }
+    
+    .upload-title {
+        font-size: 13px !important;
+    }
+    
+    .upload-btn {
+        padding: 8px 16px !important;
+        font-size: 12px !important;
+    }
+    
+    .upload-hint {
+        font-size: 11px !important;
+    }
+    
+    /* 预览网格 */
+    .preview-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)) !important;
+        gap: 8px !important;
+    }
+    
+    /* 任务历史 */
+    .task-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .task-desc {
+        font-size: 12px !important;
+    }
+    
+    .task-list {
+        max-height: 400px !important;
+        gap: 10px !important;
+    }
+    
+    .history-item {
+        padding: 12px !important;
+        border-radius: 8px !important;
+    }
+    
+    .history-item header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start !important;
+    }
+    
+    .history-meta {
+        font-size: 11px !important;
+    }
+    
+    .history-meta strong {
+        font-size: 12px !important;
+        max-width: 100% !important;
+    }
+    
+    .history-status {
+        font-size: 11px !important;
+        padding: 3px 8px !important;
+    }
+    
+    .history-video video {
+        max-height: 180px !important;
+    }
+    
+    .history-actions {
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+    
+    .history-actions button {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+    }
+    
+    .history-empty {
+        padding: 30px 16px !important;
+        font-size: 12px !important;
+    }
+    
+    /* 图像网格 */
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 12px !important;
+    }
+    
+    .history-image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important;
+        gap: 8px !important;
+    }
+}
+
+/* 超小屏幕适配 (< 480px) */
+@media (max-width: 480px) {
+    .top-header {
+        padding: 8px 10px !important;
+    }
+    
+    .page-title {
+        font-size: 14px !important;
+    }
+    
+    .header-btn {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+    }
+    
+    .tab-item {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+    
+    .main-content {
+        margin-top: 95px !important;
+        padding: 10px !important;
+        gap: 12px !important;
+    }
+    
+    .panel-section {
+        padding: 14px !important;
+    }
+    
+    .section-title {
+        font-size: 13px !important;
+    }
+    
+    .param-btn {
+        padding: 7px 12px !important;
+        font-size: 11px !important;
+    }
+    
+    .ratio-btn {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+    }
+    
+    .submit-btn {
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }
+    
+    .image-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+/* 横屏模式优化 */
+@media (max-width: 768px) and (orientation: landscape) {
+    .main-content {
+        margin-top: 90px !important;
+    }
+    
+    .task-list {
+        max-height: 250px !important;
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .param-btn,
+    .ratio-btn,
+    .submit-btn,
+    .header-btn,
+    .tab-item,
+    .prompt-example,
+    .history-actions button {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* 增加点击区域 */
+    .upload-zone {
+        min-height: 120px;
+    }
+}
+
+/* 安全区域适配 (iPhone X+) */
+@supports (padding: max(0px)) {
+    .main-content {
+        padding-left: max(12px, env(safe-area-inset-left)) !important;
+        padding-right: max(12px, env(safe-area-inset-right)) !important;
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    }
+}
+
+/* 深色模式下的移动端优化 */
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+    .panel-section {
+        background: rgba(30, 41, 59, 0.95) !important;
+    }
+}
